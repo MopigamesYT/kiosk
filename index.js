@@ -8,6 +8,9 @@ app.use(express.json());
 app.use(express.static('public'));
 
 function readKioskData() {
+  if (!fs.existsSync('kiosk.json')) {
+    fs.writeFileSync('kiosk.json', JSON.stringify([], null, 2));
+  }
   return JSON.parse(fs.readFileSync('kiosk.json', 'utf8'));
 }
 
@@ -20,7 +23,9 @@ function reorganizeIds(data) {
 }
 
 app.get('/kiosk.json', (req, res) => {
-  res.sendFile(path.join(__dirname, 'kiosk.json'));
+  // Ensure kiosk.json exists or is created before trying to serve it
+  const kioskData = readKioskData(); // This will create kiosk.json if it doesn't exist
+  res.json(kioskData);
 });
 
 app.get('/kiosk', (req, res) => {
@@ -70,8 +75,8 @@ app.post('/kiosk/reorder', (req, res) => {
   res.json({ success: true, updatedData: kioskData });
 });
 
-app.listen(port, () => {
-  console.log(`Server running at http://localhost:${port}`);
+app.listen(port, '0.0.0.0', () => {
+  console.log(`Server running at http://0.0.0.0:${port}`);
 });
 
 app.get('/admin', (req, res) => {
