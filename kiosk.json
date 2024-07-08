@@ -1,0 +1,16 @@
+[
+  {
+    "id": 1,
+    "text": "caca",
+    "description": "ccccc",
+    "image": "",
+    "accentColor": "#0d00fb"
+  },
+  {
+    "id": 2,
+    "text": "Bonjour",
+    "description": "bonjour a tous",
+    "image": "https://cooperandgracie.com/cdn/shop/articles/Horses_in_Meadow.png?v=1690365162",
+    "accentColor": "#fb0000"
+  }
+]

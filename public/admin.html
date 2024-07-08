@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AdminKiosk</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header>
+        <h1>AdminKiosk</h1>
+        <button id="theme-toggle">Changer de thème</button>
+    </header>
+    <div id="kiosk-info"></div>
+    <div id="add-button">+</div>
+    
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <h2>Ajouter une information de kiosque</h2>
+            <input type="text" id="text" placeholder="Titre">
+            <textarea id="description" placeholder="Description"></textarea>
+            <input type="text" id="image" placeholder="URL de l'image">
+            <div class="color-picker">
+                <label for="accentColor">Couleur:</label>
+                <input type="color" id="accentColor" value="#4CAF50">
+            </div>
+            <div class="button-container">
+                <button id="save">Sauvegarder</button>
+                <button id="cancel">Annuler</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
