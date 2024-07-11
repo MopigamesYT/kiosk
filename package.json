@@ -4,8 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "node .",
-    "serve": "nodemon --exec 'browser-sync start --proxy \"localhost:3000\" --files \"public/*\"' --ignore 'public/*'"
+    "test": "node ."
   },
   "keywords": [],
   "author": "",

@@ -23,8 +23,7 @@ function reorganizeIds(data) {
 }
 
 app.get('/kiosk.json', (req, res) => {
-  // Ensure kiosk.json exists or is created before trying to serve it
-  const kioskData = readKioskData(); // This will create kiosk.json if it doesn't exist
+  const kioskData = readKioskData();
   res.json(kioskData);
 });
 
