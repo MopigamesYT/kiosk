@@ -1,8 +1,8 @@
 :root {
-    --bg-color: #f0f0f0;
+    --bg-color: #f5f5f5;
     --text-color: #333;
     --card-bg: #fff;
-    --card-border: #ddd;
+    --card-border: #e0e0e0;
     --accent-color: #4CAF50;
     --modal-bg: rgba(0, 0, 0, 0.4);
     --button-bg: #4CAF50;
@@ -11,15 +11,15 @@
 }
 
 .dark-theme {
-    --bg-color: #333;
+    --bg-color: #2c2c2c;
     --text-color: #f0f0f0;
-    --card-bg: #444;
-    --card-border: #555;
-    --accent-color: #4CAF50;
+    --card-bg: #3c3c3c;
+    --card-border: #4a4a4a;
+    --accent-color: #ffc0f1;
     --modal-bg: rgba(0, 0, 0, 0.7);
-    --button-bg: #4CAF50;
+    --button-bg: #ffc0f1;
     --button-text: #fff;
-    --button-hover: #45a049;
+    --button-hover: #ff86d7;
 }
 
 body {
@@ -41,13 +41,14 @@ header {
     justify-content: space-between;
     align-items: center;
     width: 100%;
-    max-width: 800px;
-    margin-bottom: 20px;
+    max-width: 1200px;
+    margin-bottom: 30px;
 }
 
 h1 {
     font-size: 2.5rem;
     margin: 0;
+    color: var(--accent-color);
 }
 
 #theme-toggle {
@@ -67,11 +68,88 @@ h1 {
 
 #kiosk-info {
     width: 100%;
-    max-width: 800px;
+    max-width: 1200px;
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 20px;
-    margin-bottom: 20px;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 30px;
+    margin-bottom: 30px;
+}
+
+.kiosk-item {
+    background-color: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    position: relative;
+    cursor: move;
+}
+
+.kiosk-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.kiosk-item h3 {
+    margin-top: 0;
+    color: var(--accent-color);
+    font-size: 1.4rem;
+}
+
+.kiosk-item p {
+    margin-bottom: 15px;
+}
+
+.kiosk-item img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 5px;
+    margin-top: 10px;
+}
+
+.button-group {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 15px;
+}
+
+.edit-btn, .delete-btn {
+    border: none;
+    padding: 8px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background-color 0.3s ease;
+    margin-left: 10px;
+}
+
+.edit-btn {
+    background-color: #2196F3;
+    color: white;
+}
+
+.edit-btn:hover {
+    background-color: #1976D2;
+}
+
+.delete-btn {
+    background-color: #f44336;
+    color: white;
+}
+
+.delete-btn:hover {
+    background-color: #d32f2f;
+}
+
+.kiosk-item.dragging {
+    opacity: 0.4;
+    transform: scale(1.05);
+    z-index: 1000;
+}
+
+.kiosk-item.drag-over {
+    border: 2px dashed var(--accent-color);
 }
 
 #add-button {
@@ -87,6 +165,7 @@ h1 {
     justify-content: center;
     align-items: center;
     transition: transform 0.3s ease;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 #add-button:hover {
@@ -243,8 +322,19 @@ input, textarea {
 
 .kiosk-item.dragging {
     opacity: 0.5;
+    transform: scale(1.05);
 }
 
 .kiosk-item.drag-over {
     border: 2px dashed #666;
 }
+
+.kiosk-item, .placeholder {
+    transition: all 0.3s ease;
+}
+
+.placeholder {
+    background-color: #f0f0f0;
+    border: 2px dashed #ccc;
+}
+
