@@ -103,12 +103,12 @@
 
         function loadContent() {
             const timestamp = new Date().getTime();
-            fetch(`/kiosk.json?t=${timestamp}`, { method: 'HEAD' })
+            fetch(/kiosk.json?t=${timestamp}, { method: 'HEAD' })
                 .then(response => {
                     const currentModified = response.headers.get('Last-Modified');
                     if (currentModified !== lastModified) {
                         lastModified = currentModified;
-                        return fetch(`/kiosk.json?t=${timestamp}`);
+                        return fetch(/kiosk.json?t=${timestamp});
                     }
                     return Promise.reject('No update needed');
                 })
@@ -119,11 +119,11 @@
                     data.forEach((item, index) => {
                         const slide = document.createElement('div');
                         slide.className = 'slide';
-                        slide.innerHTML = `
+                        slide.innerHTML = 
                             <h2>${item.text}</h2>
                             <p>${item.description}</p>
                             <img src="${item.image}" alt="${item.text}">
-                        `;
+                        ;
                         slide.style.backgroundColor = item.accentColor;
                         slideshow.appendChild(slide);
                     });
@@ -142,7 +142,7 @@
             const interval = 8000;
 
             function showSlide(index) {
-                slides[index].style.animation = `fadey ${interval}ms`;
+                slides[index].style.animation = fadey ${interval}ms;
                 slides[index].style.opacity = 1;
             }
 
