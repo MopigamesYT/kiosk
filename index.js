@@ -32,6 +32,8 @@ app.get('/kiosk', (req, res) => {
   res.json(kioskData);
 });
 
+app.use('/upload', express.static('public/upload'));
+
 app.post('/kiosk', (req, res) => {
   const kioskData = readKioskData();
   const newEntry = {
