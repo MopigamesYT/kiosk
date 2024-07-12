@@ -44,6 +44,7 @@ function loadContent() {
                     <img src="${item.image}" alt="${item.text}">
                 `;
                 slide.style.backgroundColor = item.accentColor;
+                slide.dataset.time = item.time || 8000; // Default to 8000 if not specified
                 slideshow.appendChild(slide);
             });
             startSlideshow();
@@ -58,11 +59,12 @@ function loadContent() {
 function startSlideshow() {
     const slides = document.getElementsByClassName('slide');
     let currentSlide = 0;
-    const interval = 8000;
 
     function showSlide(index) {
+        const interval = parseInt(slides[index].dataset.time);
         slides[index].style.animation = `fadey ${interval}ms`;
         slides[index].style.opacity = 1;
+        return interval;
     }
 
     function hideSlide(index) {
@@ -70,13 +72,16 @@ function startSlideshow() {
         slides[index].style.animation = '';
     }
 
+    function nextSlide() {
+        hideSlide(currentSlide);
+        currentSlide = (currentSlide + 1) % slides.length;
+        const interval = showSlide(currentSlide);
+        setTimeout(nextSlide, interval);
+    }
+
     if (slides.length > 0) {
-        showSlide(currentSlide);
-        setInterval(function() {
-            hideSlide(currentSlide);
-            currentSlide = (currentSlide + 1) % slides.length;
-            showSlide(currentSlide);
-        }, interval);
+        const initialInterval = showSlide(currentSlide);
+        setTimeout(nextSlide, initialInterval);
     }
 }
 
