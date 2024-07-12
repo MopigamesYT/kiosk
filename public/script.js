@@ -246,7 +246,7 @@ function editKioskItem(id) {
         if (item) {
           document.getElementById('text').value = item.text;
           document.getElementById('description').value = item.description;
-          document.getElementById('time').value = item.time;
+          document.getElementById('time').value = item.time ? item.time / 1000 : '';
           document.getElementById('image').value = item.image;
           document.getElementById('accentColor').value = item.accentColor || '#4CAF50';
           document.getElementById('imageUpload').value = ''; // Clear any previous file selection
@@ -303,11 +303,19 @@ cancelButton.addEventListener('click', () => {
 saveButton.addEventListener('click', async () => {
     const text = document.getElementById('text').value;
     const description = document.getElementById('description').value;
-    const time = document.getElementById('time').value;
+    const timeInputSeconds = document.getElementById('time').value;
     let image = document.getElementById('image').value;
     let accentColor = document.getElementById('accentColor').value;
 
     const imageUpload = document.getElementById('imageUpload');
+
+    const timeSeconds = timeInputSeconds === '' ? null : Number(timeInputSeconds);
+    if (timeSeconds !== null && !isNaN(timeSeconds) && timeSeconds < 4) {
+        alert('Le temps minimum est de 4 secondes');
+        return;
+    }
+
+
     if (imageUpload.files.length > 0) {
         try {
             image = await uploadImage(imageUpload.files[0]);
@@ -331,7 +339,9 @@ saveButton.addEventListener('click', async () => {
         }
     }
 
-    const data = { text, description, time, image, accentColor };
+    const timeMilliseconds = timeSeconds ? timeSeconds * 1000 : null;
+
+    const data = { text, description, time: timeMilliseconds, image, accentColor };
     const method = editingId ? 'PUT' : 'POST';
     const url = editingId ? `/kiosk/${editingId}` : '/kiosk';
 

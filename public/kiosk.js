@@ -36,6 +36,13 @@ function loadContent() {
             const slideshow = document.getElementById('slideshow');
             slideshow.innerHTML = '';
             data.forEach((item, index) => {
+                const timeMilliseconds = item.time;
+                const timeSeconds = timeMilliseconds ? timeMilliseconds / 1000 : null;
+                if (timeSeconds !== null && timeSeconds < 4) {
+                    console.warn('Slide time is less than 4 seconds');
+                    // You might want to handle this case, e.g., set a minimum time
+                }
+                
                 const slide = document.createElement('div');
                 slide.className = 'slide';
                 slide.innerHTML = `
@@ -43,8 +50,8 @@ function loadContent() {
                     <p>${item.description}</p>
                     <img src="${item.image}" alt="${item.text}">
                 `;
-                slide.style.backgroundColor = item.accentColor;
-                slide.dataset.time = item.time || 8000; // Default to 8000 if not specified
+                slide.dataset.accentColor = item.accentColor;
+                slide.dataset.time = timeMilliseconds || 8000; // Default to 8000 ms if not specified
                 slideshow.appendChild(slide);
             });
             startSlideshow();
@@ -55,21 +62,23 @@ function loadContent() {
             }
         });
 }
-
 function startSlideshow() {
     const slides = document.getElementsByClassName('slide');
     let currentSlide = 0;
+    const slideshow = document.getElementById('slideshow');
 
     function showSlide(index) {
         const interval = parseInt(slides[index].dataset.time);
-        slides[index].style.animation = `fadey ${interval}ms`;
+        const currentColor = slides[index].dataset.accentColor;
+
+        slideshow.style.backgroundColor = currentColor;
         slides[index].style.opacity = 1;
+
         return interval;
     }
 
     function hideSlide(index) {
         slides[index].style.opacity = 0;
-        slides[index].style.animation = '';
     }
 
     function nextSlide() {
