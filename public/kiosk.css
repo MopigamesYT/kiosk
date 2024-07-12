@@ -1,63 +1,65 @@
-@keyframes fadey { 
-    0% { opacity: 0; }
-    15% { opacity: 1; }
-    85% { opacity: 1; }
-    100% { opacity: 0; }
-}
-body { 
-    font-family: 'Helvetica Neue', Arial, sans-serif; 
+body {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
     margin: 0;
     padding: 0;
-    background-color: #f0f0f0;
     overflow: hidden;
 }
-#container { 
+
+#container {
     width: 100vw;
     height: 100vh;
-    position: relative; 
+    position: relative;
     cursor: pointer;
-    background-color: #fff;
 }
-#slideshow { 
-    position: relative; 
+
+#slideshow {
+    position: relative;
     width: 100%;
     height: 100%;
+    transition: background-color 1s ease;
 }
+
 .slide {
-position: absolute;
-left: 0; top: 0;
-width: 100%; height: 100%;
-opacity: 0;
-display: flex;
-flex-direction: column;
-justify-content: center;
-align-items: center;
-text-align: center;
-padding: 2rem;
-box-sizing: border-box;
-color: #fff;
-text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    position: absolute;
+    left: 0; top: 0;
+    width: 100%; height: 100%;
+    opacity: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 2rem;
+    box-sizing: border-box;
+    color: #fff;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    transition: opacity 2s ease;
 }
+
 .slide:first-child { position: relative; }
+
 .slide h2 {
-font-size: 2.5vw; 
-margin-bottom: 2vh;
+    font-size: 2.5vw;
+    margin-bottom: 2vh;
 }
+
 .slide p {
-font-size: 1.5vw; 
-max-width: 80%;
-line-height: 1.4;
+    font-size: 1.5vw;
+    max-width: 80%;
+    line-height: 1.4;
 }
+
 .slide img {
-min-width: 200px;
-min-height: 150px;
-object-fit: contain;
-margin-top: 4vh;
-box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-border-radius: 20px;
+    min-width: 200px;
+    min-height: 150px;
+    object-fit: contain;
+    margin-top: 4vh;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    border-radius: 20px;
 }
-#container:fullscreen { 
-    display: flex; 
-    justify-content: center; 
-    align-items: center; 
+
+#container:fullscreen {
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
