@@ -3,6 +3,8 @@ const fs = require('fs');
 const path = require('path');
 const app = express();
 const port = 3000;
+const multer = require('multer');
+const { v4: uuidv4 } = require('uuid');
 
 app.use(express.json());
 app.use(express.static('public'));
@@ -86,4 +88,24 @@ app.get('/admin', (req, res) => {
 
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'kiosk.html'));
+});
+
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'public/upload/')
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = uuidv4();
+    cb(null, uniqueSuffix + '-' + file.originalname)
+  }
+});
+
+const upload = multer({ storage: storage });
+
+app.post('/upload', upload.single('image'), (req, res) => {
+  if (req.file) {
+    res.json({ success: true, imagePath: '/upload/' + req.file.filename });
+  } else {
+    res.status(400).json({ success: false, message: 'No file uploaded' });
+  }
 });

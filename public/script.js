@@ -53,9 +53,23 @@ function getDominantColor(imageUrl) {
 
 function fetchAndSetDominantColor() {
     const imageUrl = document.getElementById('image').value;
+    const imageFile = document.getElementById('imageUpload').files[0];
     const accentColorInput = document.getElementById('accentColor');
     
-    if (imageUrl) {
+    if (imageFile) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            getDominantColor(e.target.result)
+                .then(color => {
+                    accentColorInput.value = color;
+                })
+                .catch(error => {
+                    console.error('Error fetching dominant color:', error);
+                    accentColorInput.value = '#4CAF50'; // Fallback to default color
+                });
+        }
+        reader.readAsDataURL(imageFile);
+    } else if (imageUrl) {
         getDominantColor(imageUrl)
             .then(color => {
                 accentColorInput.value = color;
@@ -215,39 +229,59 @@ function deleteKioskItem(id) {
 
 function editKioskItem(id) {
     fetch('/kiosk')
-        .then(response => response.json())
-        .then(data => {
-            const item = data.find(item => item.id === id);
-            if (item) {
-                document.getElementById('text').value = item.text;
-                document.getElementById('description').value = item.description;
-                document.getElementById('image').value = item.image;
-                document.getElementById('accentColor').value = item.accentColor || '#4CAF50';
-                editingId = id;
-                modal.style.display = 'block';
-                
-                // Add event listener to image input
-                document.getElementById('image').addEventListener('change', fetchAndSetDominantColor);
-                
-                // Fetch dominant color if no accent color is set
-                if (!item.accentColor || item.accentColor === '#4CAF50') {
-                    fetchAndSetDominantColor();
-                }
-            }
-        });
-}
+      .then(response => response.json())
+      .then(data => {
+        const item = data.find(item => item.id === id);
+        if (item) {
+          document.getElementById('text').value = item.text;
+          document.getElementById('description').value = item.description;
+          document.getElementById('image').value = item.image;
+          document.getElementById('accentColor').value = item.accentColor || '#4CAF50';
+          document.getElementById('imageUpload').value = ''; // Clear any previous file selection
+          editingId = id;
+          modal.style.display = 'block';
+          
+          // Add event listener to image input
+          document.getElementById('image').addEventListener('change', fetchAndSetDominantColor);
+          
+          // Fetch dominant color if no accent color is set
+          if (!item.accentColor || item.accentColor === '#4CAF50') {
+            fetchAndSetDominantColor();
+          }
+        }
+      });
+  }
 
-addButton.addEventListener('click', () => {
+function uploadImage(file) {
+    const formData = new FormData();
+    formData.append('image', file);
+  
+    return fetch('/upload', {
+      method: 'POST',
+      body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        return data.imagePath;
+      } else {
+        throw new Error('Upload failed');
+      }
+    });
+  }
+
+  addButton.addEventListener('click', () => {
     editingId = null;
     document.getElementById('text').value = '';
     document.getElementById('description').value = '';
     document.getElementById('image').value = '';
+    document.getElementById('imageUpload').value = ''; // Clear any previous file selection
     document.getElementById('accentColor').value = '#4CAF50';
     modal.style.display = 'block';
-
+  
     document.getElementById('image').addEventListener('change', fetchAndSetDominantColor);
-
-});
+    document.getElementById('imageUpload').addEventListener('change', fetchAndSetDominantColor);
+  });
 
 cancelButton.addEventListener('click', () => {
     modal.style.display = 'none';
@@ -260,29 +294,53 @@ saveButton.addEventListener('click', async () => {
         return;
     }
     const description = document.getElementById('description').value;
-    const image = document.getElementById('image').value;
+    let image = document.getElementById('image').value;
     let accentColor = document.getElementById('accentColor').value;
 
+    const imageUpload = document.getElementById('imageUpload');
+    if (imageUpload.files.length > 0) {
+        try {
+            image = await uploadImage(imageUpload.files[0]);
+            // Fetch dominant color for uploaded image
+            const uploadedImageUrl = window.location.origin + image;
+            accentColor = await getDominantColor(uploadedImageUrl);
+        } catch (error) {
+            console.error('Upload or color extraction failed:', error);
+            alert('Image upload or color extraction failed. Please try again or use an image URL.');
+            return;
+        }
+    } else if (image) {
+        // Fetch dominant color for image URL if not already set
+        if (accentColor === '#4CAF50') {
+            try {
+                accentColor = await getDominantColor(image);
+            } catch (error) {
+                console.error('Color extraction failed:', error);
+                // Keep default color if extraction fails
+            }
+        }
+    }
+  
     const data = { text, description, image, accentColor };
     const method = editingId ? 'PUT' : 'POST';
     const url = editingId ? `/kiosk/${editingId}` : '/kiosk';
-
+  
     fetch(url, {
-        method: method,
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
+      method: method,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
     })
     .then(response => response.json())
     .then(data => {
-        if (data.success) {
-            modal.style.display = 'none';
-            loadKioskData();
-            editingId = null;
-        }
+      if (data.success) {
+        modal.style.display = 'none';
+        loadKioskData();
+        editingId = null;
+      }
     });
-});
+  });
 
 function setTheme(isDark) {
     document.body.classList.toggle('dark-theme', isDark);
