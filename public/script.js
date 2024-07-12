@@ -246,6 +246,7 @@ function editKioskItem(id) {
         if (item) {
           document.getElementById('text').value = item.text;
           document.getElementById('description').value = item.description;
+          document.getElementById('time').value = item.time;
           document.getElementById('image').value = item.image;
           document.getElementById('accentColor').value = item.accentColor || '#4CAF50';
           document.getElementById('imageUpload').value = ''; // Clear any previous file selection
@@ -285,6 +286,7 @@ function uploadImage(file) {
     editingId = null;
     document.getElementById('text').value = '';
     document.getElementById('description').value = '';
+    document.getElementById('time').value = '';
     document.getElementById('image').value = '';
     document.getElementById('imageUpload').value = ''; // Clear any previous file selection
     document.getElementById('accentColor').value = '#4CAF50';
@@ -301,6 +303,7 @@ cancelButton.addEventListener('click', () => {
 saveButton.addEventListener('click', async () => {
     const text = document.getElementById('text').value;
     const description = document.getElementById('description').value;
+    const time = document.getElementById('time').value;
     let image = document.getElementById('image').value;
     let accentColor = document.getElementById('accentColor').value;
 
@@ -328,7 +331,7 @@ saveButton.addEventListener('click', async () => {
         }
     }
 
-    const data = { text, description, image, accentColor };
+    const data = { text, description, time, image, accentColor };
     const method = editingId ? 'PUT' : 'POST';
     const url = editingId ? `/kiosk/${editingId}` : '/kiosk';
 
