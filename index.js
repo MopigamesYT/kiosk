@@ -33,7 +33,30 @@ app.get('/kiosk', (req, res) => {
   const kioskData = readKioskData();
   res.json(kioskData);
 });
-
+function editKioskItem(id) {
+  fetch('/kiosk')
+      .then(response => response.json())
+      .then(data => {
+          const item = data.find(item => item.id === id);
+          if (item) {
+              document.getElementById('text').value = item.text || '';
+              document.getElementById('description').value = item.description || '';
+              document.getElementById('image').value = item.image || '';
+              document.getElementById('accentColor').value = item.accentColor || '#4CAF50';
+              document.getElementById('imageUpload').value = ''; // Clear any previous file selection
+              editingId = id;
+              modal.style.display = 'block';
+              
+              // Add event listener to image input
+              document.getElementById('image').addEventListener('change', fetchAndSetDominantColor);
+              
+              // Fetch dominant color if no accent color is set
+              if (!item.accentColor || item.accentColor === '#4CAF50') {
+                  fetchAndSetDominantColor();
+              }
+          }
+      });
+}
 app.use('/upload', express.static('public/upload'));
 
 app.post('/kiosk', (req, res) => {
