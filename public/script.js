@@ -97,10 +97,21 @@ function renderKioskItems(data) {
         itemElement.style.borderColor = item.accentColor;
         itemElement.setAttribute('draggable', true);
         itemElement.setAttribute('data-id', item.id);
+
+        let content = '';
+        if (item.text || item.description) {
+            content = `
+                ${item.text ? `<h3>${item.id}. ${item.text}</h3>` : ''}
+                ${item.description ? `<p>${item.description}</p>` : ''}
+                ${item.image ? `<img src="${item.image}" alt="${item.text || 'Kiosk image'}" draggable="false">` : ''}
+            `;
+        } else if (item.image) {
+            content = `<h3>${item.id}.</h3> <img src="${item.image}" alt="Kiosk image" draggable="false" class="full-size-image">`;
+            itemElement.classList.add('image-only');
+        }
+
         itemElement.innerHTML = `
-            <h3>${item.id}. ${item.text}</h3>
-            <p>${item.description}</p>
-            <img src="${item.image}" alt="${item.text}" draggable="false">
+            ${content}
             <div class="button-group">
                 <button class="edit-btn" data-id="${item.id}">Edit</button>
                 <button class="delete-btn" data-id="${item.id}">Delete</button>
@@ -289,10 +300,6 @@ cancelButton.addEventListener('click', () => {
 
 saveButton.addEventListener('click', async () => {
     const text = document.getElementById('text').value;
-    if (!text.trim()) {
-        alert('Le titre ne peut pas être vide.');
-        return;
-    }
     const description = document.getElementById('description').value;
     let image = document.getElementById('image').value;
     let accentColor = document.getElementById('accentColor').value;
@@ -320,27 +327,27 @@ saveButton.addEventListener('click', async () => {
             }
         }
     }
-  
+
     const data = { text, description, image, accentColor };
     const method = editingId ? 'PUT' : 'POST';
     const url = editingId ? `/kiosk/${editingId}` : '/kiosk';
-  
+
     fetch(url, {
-      method: method,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(data),
+        method: method,
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
     })
     .then(response => response.json())
     .then(data => {
-      if (data.success) {
-        modal.style.display = 'none';
-        loadKioskData();
-        editingId = null;
-      }
+        if (data.success) {
+            modal.style.display = 'none';
+            loadKioskData();
+            editingId = null;
+        }
     });
-  });
+});
 
 function setTheme(isDark) {
     document.body.classList.toggle('dark-theme', isDark);
