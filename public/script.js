@@ -8,6 +8,23 @@ let editingId = null;
 let placeholder = document.createElement('div');
 placeholder.className = 'placeholder';
 
+function toggleVisibility(id) {
+    fetch(`/kiosk/${id}/toggle-visibility`, {
+        method: 'POST',
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            renderKioskItems(data.updatedData);
+        } else {
+            console.error('Failed to toggle visibility');
+        }
+    })
+    .catch(error => {
+        console.error('Error toggling visibility:', error);
+    });
+}
+
 function getDominantColor(imageUrl) {
     return new Promise((resolve, reject) => {
         const img = new Image();
@@ -95,6 +112,8 @@ function renderKioskItems(data) {
         const itemElement = document.createElement('div');
         itemElement.className = 'kiosk-item';
         itemElement.style.borderColor = item.accentColor;
+        // Set the opacity to 50% if visibility is false
+        itemElement.style.opacity = item.visibility ? '1' : '0.5';
         itemElement.setAttribute('draggable', true);
         itemElement.setAttribute('data-id', item.id);
 
@@ -110,9 +129,12 @@ function renderKioskItems(data) {
             itemElement.classList.add('image-only');
         }
 
+        const visibilityIcon = item.visibility ? '👁️' : '👁️‍🗨️';
+
         itemElement.innerHTML = `
             ${content}
             <div class="button-group">
+                <button class="visibility-btn" data-id="${item.id}" title="${item.visibility ? 'Hide' : 'Show'}">${visibilityIcon}</button>
                 <button class="edit-btn" data-id="${item.id}">Edit</button>
                 <button class="delete-btn" data-id="${item.id}">Delete</button>
             </div>
@@ -126,6 +148,7 @@ function renderKioskItems(data) {
 function addItemListeners() {
     const deleteButtons = document.querySelectorAll('.delete-btn');
     const editButtons = document.querySelectorAll('.edit-btn');
+    const visibilityButtons = document.querySelectorAll('.visibility-btn');
     
     deleteButtons.forEach(button => {
         button.addEventListener('click', (e) => {
@@ -138,6 +161,13 @@ function addItemListeners() {
         button.addEventListener('click', (e) => {
             const id = parseInt(e.target.getAttribute('data-id'));
             editKioskItem(id);
+        });
+    });
+
+    visibilityButtons.forEach(button => {
+        button.addEventListener('click', (e) => {
+            const id = parseInt(e.target.getAttribute('data-id'));
+            toggleVisibility(id);
         });
     });
 }
@@ -249,6 +279,7 @@ function editKioskItem(id) {
           document.getElementById('time').value = item.time ? item.time / 1000 : '';
           document.getElementById('image').value = item.image;
           document.getElementById('accentColor').value = item.accentColor || '#4CAF50';
+          document.getElementById('visibility').checked = item.visibility;
           document.getElementById('imageUpload').value = ''; // Clear any previous file selection
           editingId = id;
           modal.style.display = 'block';
@@ -262,7 +293,7 @@ function editKioskItem(id) {
           }
         }
       });
-  }
+}
 
 function uploadImage(file) {
     const formData = new FormData();
@@ -341,7 +372,7 @@ saveButton.addEventListener('click', async () => {
 
     const timeMilliseconds = timeSeconds ? timeSeconds * 1000 : null;
 
-    const data = { text, description, time: timeMilliseconds, image, accentColor };
+    const data = { text, description, time: timeMilliseconds, image, accentColor, visibility: true };
     const method = editingId ? 'PUT' : 'POST';
     const url = editingId ? `/kiosk/${editingId}` : '/kiosk';
 

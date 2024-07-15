@@ -6,8 +6,25 @@ const port = 3000;
 const multer = require('multer');
 const { v4: uuidv4 } = require('uuid');
 
+if (!fs.existsSync('public/upload')) {
+  fs.mkdirSync('public/upload');
+}
+
 app.use(express.json());
 app.use(express.static('public'));
+
+app.post('/kiosk/:id/toggle-visibility', (req, res) => {
+  const id = parseInt(req.params.id);
+  let kioskData = readKioskData();
+  const itemIndex = kioskData.findIndex(item => item.id === id);
+  if (itemIndex !== -1) {
+    kioskData[itemIndex].visibility = !kioskData[itemIndex].visibility;
+    writeKioskData(kioskData);
+    res.json({ success: true, updatedData: kioskData });
+  } else {
+    res.status(404).json({ success: false, message: 'Item not found' });
+  }
+});
 
 function readKioskData() {
   if (!fs.existsSync('kiosk.json')) {
@@ -46,6 +63,7 @@ app.post('/kiosk', (req, res) => {
   writeKioskData(kioskData);
   res.json({ success: true, newEntry });
 });
+
 
 app.put('/kiosk/:id', (req, res) => {
   const id = parseInt(req.params.id);

@@ -361,3 +361,15 @@ textarea {
     border: 2px dashed #ccc;
 }
 
+.visibility-btn {
+    font-size: 1.2em;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 5px;
+}
+
+.visibility-btn:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+    border-radius: 50%;
+}

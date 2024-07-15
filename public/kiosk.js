@@ -1,4 +1,6 @@
-let lastModified = '';
+let slides = [];
+let currentSlideIndex = 0;
+let slideshowInterval;
 
 function toggleFullScreen(element) {
     if (!document.fullscreenElement) {
@@ -20,81 +22,123 @@ function toggleFullScreen(element) {
     }
 }
 
+
+
 function loadContent() {
     const timestamp = new Date().getTime();
-    fetch(`kiosk.json?t=${timestamp}`, { method: 'HEAD' })
-        .then(response => {
-            const currentModified = response.headers.get('Last-Modified');
-            if (currentModified !== lastModified) {
-                lastModified = currentModified;
-                return fetch(`kiosk.json?t=${timestamp}`);
-            }
-            return Promise.reject('No update needed');
-        })
+    fetch(`kiosk.json?t=${timestamp}`)
         .then(response => response.json())
         .then(data => {
-            const slideshow = document.getElementById('slideshow');
-            slideshow.innerHTML = '';
-            data.forEach((item, index) => {
-                const timeMilliseconds = item.time;
-                const timeSeconds = timeMilliseconds ? timeMilliseconds / 1000 : null;
-                if (timeSeconds !== null && timeSeconds < 4) {
-                    console.warn('Slide time is less than 4 seconds');
-                    // You might want to handle this case, e.g., set a minimum time
-                }
-                
-                const slide = document.createElement('div');
-                slide.className = 'slide';
-                slide.innerHTML = `
-                    <h2>${item.text}</h2>
-                    <p>${item.description}</p>
-                    <img src="${item.image}" alt="${item.text}">
-                `;
-                slide.dataset.accentColor = item.accentColor;
-                slide.dataset.time = timeMilliseconds || 8000; // Default to 8000 ms if not specified
-                slideshow.appendChild(slide);
-            });
-            startSlideshow();
+            updateSlides(data);
         })
         .catch(error => {
-            if (error !== 'No update needed') {
-                console.error('Error loading kiosk data:', error);
-            }
+            console.error('Error loading kiosk data:', error);
+            showNoSlidesMessage();
         });
 }
-function startSlideshow() {
-    const slides = document.getElementsByClassName('slide');
-    let currentSlide = 0;
-    const slideshow = document.getElementById('slideshow');
 
-    function showSlide(index) {
-        const interval = parseInt(slides[index].dataset.time);
-        const currentColor = slides[index].dataset.accentColor;
-
-        slideshow.style.backgroundColor = currentColor;
-        slides[index].style.opacity = 1;
-
-        return interval;
+function updateSlides(data) {
+    if (data.length === 0) {
+        showNoSlidesMessage();
+        return;
     }
 
-    function hideSlide(index) {
-        slides[index].style.opacity = 0;
+    // Filter out slides with visibility set to false
+    const visibleSlides = data.filter(item => item.visibility !== false);
+
+    // Check if there are no visible slides
+    if (visibleSlides.length === 0) {
+        showNoSlidesMessage();
+        return;
     }
 
-    function nextSlide() {
-        hideSlide(currentSlide);
-        currentSlide = (currentSlide + 1) % slides.length;
-        const interval = showSlide(currentSlide);
-        setTimeout(nextSlide, interval);
-    }
+    const newSlides = visibleSlides.map(item => ({
+        text: item.text,
+        description: item.description,
+        image: item.image,
+        accentColor: item.accentColor,
+        time: item.time || 8000
+    }));
 
-    if (slides.length > 0) {
-        const initialInterval = showSlide(currentSlide);
-        setTimeout(nextSlide, initialInterval);
+    if (JSON.stringify(newSlides) !== JSON.stringify(slides)) {
+        slides = newSlides;
+        const slideshow = document.getElementById('slideshow');
+        slideshow.innerHTML = '';
+        slides.forEach((slide, index) => {
+            slideshow.appendChild(createSlideElement(slide, index));
+        });
+        
+        if (!slideshowInterval) {
+            startSlideshow();
+        }
     }
 }
 
-window.onload = function() {
+function createSlideElement(slide, index) {
+    const slideElement = document.createElement('div');
+    slideElement.className = 'slide';
+    slideElement.style.opacity = index === currentSlideIndex ? '1' : '0';
+    slideElement.dataset.accentColor = slide.accentColor;
+    
+    let content = `<h2>${slide.text}</h2>`;
+    if (slide.description) {
+        content += `<p>${slide.description}</p>`;
+    }
+    if (slide.image) {
+        content += `<img src="${slide.image}" alt="${slide.text}">`;
+    }
+    
+    slideElement.innerHTML = content;
+    return slideElement;
+}
+
+function showNoSlidesMessage() {
+    const slideshow = document.getElementById('slideshow');
+    slideshow.innerHTML = `
+        <div class="no-slides-message">
+            <h1>Aucune slide!</h1>
+            <button onclick="goToAdminPanel()">Aller au panel admin</button>
+        </div>
+    `;
+}
+
+function goToAdminPanel() {
+    window.location.href = '/admin';
+}
+
+function showSlide(index) {
+    const slideshow = document.getElementById('slideshow');
+    const slides = slideshow.getElementsByClassName('slide');
+    
+    // Hide all slides
+    for (let i = 0; i < slides.length; i++) {
+        slides[i].style.opacity = '0';
+    }
+    
+    // Show current slide
+    slides[index].style.opacity = '1';
+    
+    // Update background color
+    slideshow.style.backgroundColor = slides[index].dataset.accentColor;
+}
+
+function startSlideshow() {
+    clearInterval(slideshowInterval);
+    
+    function nextSlide() {
+        currentSlideIndex = (currentSlideIndex + 1) % slides.length;
+        showSlide(currentSlideIndex);
+    }
+
+    showSlide(currentSlideIndex);
+    slideshowInterval = setInterval(() => {
+        nextSlide();
+    }, slides[currentSlideIndex].time);
+}
+
+function init() {
     loadContent();
-    setInterval(loadContent, 20000);
-};
+    setInterval(loadContent, 2000);
+}
+
+window.onload = init;

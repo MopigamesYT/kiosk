@@ -63,3 +63,34 @@ body {
     justify-content: center;
     align-items: center;
 }
+
+.no-slides-message {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    text-align: center;
+    color: #fff;
+    background-color: #333;
+}
+
+.no-slides-message h1 {
+    font-size: 4vw;
+    margin-bottom: 2vh;
+}
+
+.no-slides-message button {
+    font-size: 1.5vw;
+    padding: 1vh 2vw;
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.no-slides-message button:hover {
+    background-color: #0056b3;
+}
