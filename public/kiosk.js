@@ -146,26 +146,84 @@ function showSlide(index) {
     const slideshow = document.getElementById('slideshow');
     const slides = slideshow.getElementsByClassName('slide');
    
+    // Fade out current slide
+    if (slides[currentSlideIndex]) {
+        slides[currentSlideIndex].classList.add('fadeout');
+        setTimeout(() => {
+            slides[currentSlideIndex].classList.remove('fadeout', 'active');
+            slides[currentSlideIndex].style.opacity = '0';
+            
+            // Fade in new slide only after the previous one has faded out
+            fadeInNewSlide(index, slides, slideshow);
+        }, 500); // Match this to your fade-out animation duration
+    } else {
+        // If there's no current slide (first run), fade in the new slide immediately
+        fadeInNewSlide(index, slides, slideshow);
+    }
+}
+
+function fadeInNewSlide(index, slides, slideshow) {
     for (let i = 0; i < slides.length; i++) {
         slides[i].style.opacity = '0';
+        slides[i].classList.remove('active');
     }
    
     slides[index].style.opacity = '1';
+    slides[index].classList.add('active');
    
     slideshow.style.backgroundColor = slides[index].dataset.accentColor;
+
+    // Trigger reflow to restart animations
+    slides[index].offsetHeight;
+
+    // Add animation classes to elements inside the current slide
+    const title = slides[index].querySelector('h2');
+    const description = slides[index].querySelector('p');
+    const image = slides[index].querySelector('img');
+
+    if (title) title.classList.add('animate-title');
+    if (description) description.classList.add('animate-description');
+    if (image) image.classList.add('animate-image');
 }
 
 function startSlideshow() {
     clearInterval(slideshowInterval);
    
     function nextSlide() {
+        // Remove animation classes from the current slide
+        const currentSlide = document.getElementsByClassName('slide')[currentSlideIndex];
+        const title = currentSlide.querySelector('h2');
+        const description = currentSlide.querySelector('p');
+        const image = currentSlide.querySelector('img');
+
+        if (title) title.classList.remove('animate-title');
+        if (description) description.classList.remove('animate-description');
+        if (image) image.classList.remove('animate-image');
+
         currentSlideIndex = (currentSlideIndex + 1) % slides.length;
         showSlide(currentSlideIndex);
     }
+
     showSlide(currentSlideIndex);
-    slideshowInterval = setInterval(() => {
-        nextSlide();
-    }, slides[currentSlideIndex].time);
+    slideshowInterval = setInterval(nextSlide, slides[currentSlideIndex].time);
+}
+
+function createSlideElement(slide, index) {
+    const slideElement = document.createElement('div');
+    slideElement.className = 'slide';
+    slideElement.style.opacity = index === currentSlideIndex ? '1' : '0';
+    slideElement.dataset.accentColor = slide.accentColor;
+   
+    let content = `<h2>${slide.text}</h2>`;
+    if (slide.description) {
+        content += `<p>${slide.description}</p>`;
+    }
+    if (slide.image) {
+        content += `<img src="${slide.image}" alt="${slide.text}">`;
+    }
+   
+    slideElement.innerHTML = content;
+    return slideElement;
 }
 
 function init() {
