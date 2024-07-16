@@ -43,6 +43,7 @@ header {
     width: 100%;
     max-width: 1200px;
     margin-bottom: 30px;
+    flex-wrap: wrap;
 }
 
 h1 {
@@ -181,12 +182,12 @@ h1 {
     width: 100%;
     height: 100%;
     background-color: var(--modal-bg);
-    overflow-y: auto; /* Allow scrolling if content overflows */
+    overflow-y: auto;
 }
 
 .modal-content {
     background-color: var(--card-bg);
-    margin: 10% auto; /* Reduced from 15% to 10% */
+    margin: 10% auto;
     padding: 20px;
     border: 1px solid var(--card-border);
     border-radius: 10px;
@@ -194,23 +195,6 @@ h1 {
     max-width: 500px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     box-sizing: border-box;
-}
-
-@media (max-width: 600px) {
-    .modal-content {
-        margin: 5% auto; /* Further reduce margin for very small screens */
-        width: 95%; /* Increase width slightly */
-        padding: 15px; /* Reduce padding */
-    }
-
-    input, textarea, .color-picker input[type="color"] {
-        font-size: 16px; /* Prevent zoom on focus in iOS */
-    }
-
-    .button-container button {
-        padding: 8px 12px; /* Slightly smaller buttons */
-        font-size: 0.9rem;
-    }
 }
 
 input, textarea {
@@ -235,7 +219,6 @@ textarea {
     margin-bottom: 15px;
     flex-wrap: wrap;
 }
-
 
 .color-picker label {
     margin-right: 10px;
@@ -288,97 +271,6 @@ textarea {
     background-color: #d32f2f;
 }
 
-.kiosk-item {
-    background-color: var(--card-bg);
-    border: 1px solid var(--card-border);
-    border-radius: 10px;
-    padding: 15px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    transition: transform 0.3s ease;
-}
-
-.kiosk-item:hover {
-    transform: translateY(-5px);
-}
-
-.kiosk-item h3 {
-    margin-top: 0;
-    color: var(--accent-color);
-}
-
-.kiosk-item img {
-    max-width: 100%;
-    height: auto;
-    border-radius: 5px;
-    margin-top: 10px;
-}
-
-/* Add this to the end of your existing CSS file */
-
-.button-group {
-    display: flex;
-    justify-content: flex-end;
-    margin-top: 10px;
-}
-
-.edit-btn, .delete-btn {
-    border: none;
-    padding: 5px 10px;
-    border-radius: 3px;
-    cursor: pointer;
-    font-size: 0.9rem;
-    transition: background-color 0.3s ease;
-    margin-left: 5px;
-}
-
-.edit-btn {
-    background-color: #2196F3;
-    color: white;
-}
-
-.edit-btn:hover {
-    background-color: #1976D2;
-}
-
-.delete-btn {
-    background-color: #f44336;
-    color: white;
-}
-
-.delete-btn:hover {
-    background-color: #d32f2f;
-}
-
-.kiosk-item {
-    position: relative;
-    cursor: move;
-    /* ... existing styles ... */
-}
-
-.kiosk-item .button-group {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-}
-
-.kiosk-item.dragging {
-    opacity: 0.5;
-    transform: scale(1.05);
-}
-
-.kiosk-item.drag-over {
-    border: 2px dashed #666;
-}
-
-.kiosk-item, .placeholder {
-    transition: all 0.3s ease;
-}
-
-.placeholder {
-    background-color: #f0f0f0;
-    border: 2px dashed #ccc;
-}
-
 .visibility-btn {
     font-size: 1.2em;
     background: none;
@@ -390,4 +282,93 @@ textarea {
 .visibility-btn:hover {
     background-color: rgba(0, 0, 0, 0.1);
     border-radius: 50%;
+}
+
+@media (max-width: 768px) {
+    body {
+        padding: 10px;
+    }
+
+    header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    h1 {
+        font-size: 2rem;
+        margin-bottom: 10px;
+    }
+
+    #kiosk-info {
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 20px;
+    }
+
+    .kiosk-item {
+        padding: 15px;
+    }
+
+    .kiosk-item h3 {
+        font-size: 1.2rem;
+    }
+
+    .edit-btn, .delete-btn {
+        padding: 6px 12px;
+        font-size: 0.8rem;
+    }
+
+    #add-button {
+        font-size: 36px;
+        width: 50px;
+        height: 50px;
+    }
+
+    .modal-content {
+        margin: 5% auto;
+        padding: 15px;
+    }
+
+    input, textarea, .color-picker input[type="color"] {
+        font-size: 16px;
+    }
+
+    .button-container button {
+        padding: 8px 12px;
+        font-size: 0.9rem;
+    }
+}
+
+@media (max-width: 480px) {
+    h1 {
+        font-size: 1.8rem;
+    }
+
+    #kiosk-info {
+        grid-template-columns: 1fr;
+    }
+
+    .kiosk-item {
+        padding: 10px;
+    }
+
+    .edit-btn, .delete-btn {
+        padding: 5px 10px;
+        font-size: 0.7rem;
+    }
+
+    #add-button {
+        font-size: 32px;
+        width: 45px;
+        height: 45px;
+    }
+
+    .modal-content {
+        width: 95%;
+        padding: 10px;
+    }
+
+    .button-container button {
+        padding: 6px 10px;
+        font-size: 0.8rem;
+    }
 }
