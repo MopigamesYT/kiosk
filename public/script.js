@@ -274,25 +274,42 @@ function editKioskItem(id) {
       .then(data => {
         const item = data.find(item => item.id === id);
         if (item) {
-          document.getElementById('text').value = item.text;
-          document.getElementById('description').value = item.description;
-          document.getElementById('time').value = item.time ? item.time / 1000 : '';
-          document.getElementById('image').value = item.image;
-          document.getElementById('accentColor').value = item.accentColor || '#4CAF50';
-          document.getElementById('visibility').checked = item.visibility;
-          document.getElementById('imageUpload').value = ''; // Clear any previous file selection
+          const textInput = document.getElementById('text');
+          const descriptionInput = document.getElementById('description');
+          const timeInput = document.getElementById('time');
+          const imageInput = document.getElementById('image');
+          const accentColorInput = document.getElementById('accentColor');
+          const visibilityInput = document.getElementById('visibility');
+          const imageUploadInput = document.getElementById('imageUpload');
+
+          if (textInput) textInput.value = item.text || '';
+          if (descriptionInput) descriptionInput.value = item.description || '';
+          if (timeInput) timeInput.value = item.time ? item.time / 1000 : '';
+          if (imageInput) imageInput.value = item.image || '';
+          if (accentColorInput) accentColorInput.value = item.accentColor || '#4CAF50';
+          if (visibilityInput) visibilityInput.checked = item.visibility;
+          if (imageUploadInput) imageUploadInput.value = ''; // Clear any previous file selection
+
           editingId = id;
-          modal.style.display = 'block';
+          const modal = document.getElementById('modal');
+          if (modal) modal.style.display = 'block';
           enableSaveButton();
           
           // Add event listener to image input
-          document.getElementById('image').addEventListener('change', fetchAndSetDominantColor);
+          if (imageInput) {
+            imageInput.addEventListener('change', fetchAndSetDominantColor);
+          }
           
           // Fetch dominant color if no accent color is set
           if (!item.accentColor || item.accentColor === '#4CAF50') {
             fetchAndSetDominantColor();
           }
+        } else {
+          console.error('Item not found:', id);
         }
+      })
+      .catch(error => {
+        console.error('Error fetching kiosk data:', error);
       });
 }
 
