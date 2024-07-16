@@ -296,26 +296,22 @@ function editKioskItem(id) {
 }
 
 function uploadImage(file) {
-    return new Promise((resolve, reject) => {
-        const formData = new FormData();
-        formData.append('image', file);
-
-        fetch('/upload', {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                resolve(data.imagePath);
-            } else {
-                reject(new Error('Upload failed'));
-            }
-        })
-        .catch(reject);
+    const formData = new FormData();
+    formData.append('image', file);
+  
+    return fetch('/upload', {
+      method: 'POST',
+      body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        return data.imagePath;
+      } else {
+        throw new Error('Upload failed');
+      }
     });
-}
-
+  }
 
   addButton.addEventListener('click', () => {
     editingId = null;
@@ -336,71 +332,65 @@ cancelButton.addEventListener('click', () => {
 });
 
 saveButton.addEventListener('click', async () => {
-    if (isSaving) return;  // Prevent duplicate submissions
-    isSaving = true;
-
-    const saveSpinner = document.getElementById('saveSpinner');
-    saveSpinner.style.display = 'inline-block';
-    saveButton.disabled = true;
-
     const text = document.getElementById('text').value;
     const description = document.getElementById('description').value;
     const timeInputSeconds = document.getElementById('time').value;
     let image = document.getElementById('image').value;
     let accentColor = document.getElementById('accentColor').value;
-    const visibility = document.getElementById('visibility').checked;
 
     const imageUpload = document.getElementById('imageUpload');
 
     const timeSeconds = timeInputSeconds === '' ? null : Number(timeInputSeconds);
     if (timeSeconds !== null && !isNaN(timeSeconds) && timeSeconds < 4) {
         alert('Le temps minimum est de 4 secondes');
-        isSaving = false;
-        saveSpinner.style.display = 'none';
-        saveButton.disabled = false;
         return;
     }
 
-    try {
-        if (imageUpload.files.length > 0) {
+
+    if (imageUpload.files.length > 0) {
+        try {
             image = await uploadImage(imageUpload.files[0]);
+            // Fetch dominant color for uploaded image
             const uploadedImageUrl = window.location.origin + image;
             accentColor = await getDominantColor(uploadedImageUrl);
-        } else if (image && accentColor === '#4CAF50') {
-            accentColor = await getDominantColor(image);
+        } catch (error) {
+            console.error('Upload or color extraction failed:', error);
+            alert('Image upload or color extraction failed. Please try again or use an image URL.');
+            return;
         }
+    } else if (image) {
+        // Fetch dominant color for image URL if not already set
+        if (accentColor === '#4CAF50') {
+            try {
+                accentColor = await getDominantColor(image);
+            } catch (error) {
+                console.error('Color extraction failed:', error);
+                // Keep default color if extraction fails
+            }
+        }
+    }
 
-        const timeMilliseconds = timeSeconds ? timeSeconds * 1000 : null;
+    const timeMilliseconds = timeSeconds ? timeSeconds * 1000 : null;
 
-        const data = { text, description, time: timeMilliseconds, image, accentColor, visibility };
-        const method = editingId ? 'PUT' : 'POST';
-        const url = editingId ? `/kiosk/${editingId}` : '/kiosk';
+    const data = { text, description, time: timeMilliseconds, image, accentColor, visibility: true };
+    const method = editingId ? 'PUT' : 'POST';
+    const url = editingId ? `/kiosk/${editingId}` : '/kiosk';
 
-        const response = await fetch(url, {
-            method: method,
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(data),
-        });
-
-        const responseData = await response.json();
-
-        if (responseData.success) {
+    fetch(url, {
+        method: method,
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
             modal.style.display = 'none';
             loadKioskData();
             editingId = null;
-        } else {
-            throw new Error('Save failed');
         }
-    } catch (error) {
-        console.error('Save failed:', error);
-        alert('Save failed. Please try again.');
-    } finally {
-        isSaving = false;
-        saveSpinner.style.display = 'none';
-        saveButton.disabled = false;
-    }
+    });
 });
 
 function setTheme(isDark) {
