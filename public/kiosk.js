@@ -1,6 +1,7 @@
 let slides = [];
 let currentSlideIndex = 0;
 let slideshowInterval;
+let isInitialLoad = true;
 
 function toggleFullScreen(element) {
     if (!document.fullscreenElement) {
@@ -22,19 +23,37 @@ function toggleFullScreen(element) {
     }
 }
 
-
-
 function loadContent() {
     const timestamp = new Date().getTime();
+    if (isInitialLoad) {
+        showLoading();
+    }
+    
     fetch(`kiosk.json?t=${timestamp}`)
         .then(response => response.json())
         .then(data => {
             updateSlides(data);
+            if (isInitialLoad) {
+                hideLoading();
+                isInitialLoad = false;
+            }
         })
         .catch(error => {
             console.error('Error loading kiosk data:', error);
             showNoSlidesMessage();
+            if (isInitialLoad) {
+                hideLoading();
+                isInitialLoad = false;
+            }
         });
+}
+
+function showLoading() {
+    document.getElementById('loading').style.display = 'flex';
+}
+
+function hideLoading() {
+    document.getElementById('loading').style.display = 'none';
 }
 
 function updateSlides(data) {
@@ -42,16 +61,11 @@ function updateSlides(data) {
         showNoSlidesMessage();
         return;
     }
-
-    // Filter out slides with visibility set to false
     const visibleSlides = data.filter(item => item.visibility !== false);
-
-    // Check if there are no visible slides
     if (visibleSlides.length === 0) {
         showNoSlidesMessage();
         return;
     }
-
     const newSlides = visibleSlides.map(item => ({
         text: item.text,
         description: item.description,
@@ -59,19 +73,41 @@ function updateSlides(data) {
         accentColor: item.accentColor,
         time: item.time || 8000
     }));
-
     if (JSON.stringify(newSlides) !== JSON.stringify(slides)) {
-        slides = newSlides;
-        const slideshow = document.getElementById('slideshow');
-        slideshow.innerHTML = '';
-        slides.forEach((slide, index) => {
-            slideshow.appendChild(createSlideElement(slide, index));
-        });
-        
-        if (!slideshowInterval) {
-            startSlideshow();
+        if (!isInitialLoad) {
+            smoothTransition(newSlides);
+        } else {
+            slides = newSlides;
+            const slideshow = document.getElementById('slideshow');
+            slideshow.innerHTML = '';
+            slides.forEach((slide, index) => {
+                slideshow.appendChild(createSlideElement(slide, index));
+            });
+            if (!slideshowInterval) {
+                startSlideshow();
+            }
         }
     }
+}
+
+function smoothTransition(newSlides) {
+    const slideshow = document.getElementById('slideshow');
+    slideshow.style.opacity = '0';
+    setTimeout(() => {
+        slides = newSlides;
+        rebuildSlideshow();
+        slideshow.style.opacity = '1';
+    }, 500);
+}
+
+function rebuildSlideshow() {
+    const slideshow = document.getElementById('slideshow');
+    slideshow.innerHTML = '';
+    slides.forEach((slide, index) => {
+        slideshow.appendChild(createSlideElement(slide, index));
+    });
+    currentSlideIndex = 0;
+    startSlideshow();
 }
 
 function createSlideElement(slide, index) {
@@ -79,7 +115,7 @@ function createSlideElement(slide, index) {
     slideElement.className = 'slide';
     slideElement.style.opacity = index === currentSlideIndex ? '1' : '0';
     slideElement.dataset.accentColor = slide.accentColor;
-    
+   
     let content = `<h2>${slide.text}</h2>`;
     if (slide.description) {
         content += `<p>${slide.description}</p>`;
@@ -87,7 +123,7 @@ function createSlideElement(slide, index) {
     if (slide.image) {
         content += `<img src="${slide.image}" alt="${slide.text}">`;
     }
-    
+   
     slideElement.innerHTML = content;
     return slideElement;
 }
@@ -109,27 +145,23 @@ function goToAdminPanel() {
 function showSlide(index) {
     const slideshow = document.getElementById('slideshow');
     const slides = slideshow.getElementsByClassName('slide');
-    
-    // Hide all slides
+   
     for (let i = 0; i < slides.length; i++) {
         slides[i].style.opacity = '0';
     }
-    
-    // Show current slide
+   
     slides[index].style.opacity = '1';
-    
-    // Update background color
+   
     slideshow.style.backgroundColor = slides[index].dataset.accentColor;
 }
 
 function startSlideshow() {
     clearInterval(slideshowInterval);
-    
+   
     function nextSlide() {
         currentSlideIndex = (currentSlideIndex + 1) % slides.length;
         showSlide(currentSlideIndex);
     }
-
     showSlide(currentSlideIndex);
     slideshowInterval = setInterval(() => {
         nextSlide();
