@@ -283,6 +283,7 @@ function editKioskItem(id) {
           document.getElementById('imageUpload').value = ''; // Clear any previous file selection
           editingId = id;
           modal.style.display = 'block';
+          enableSaveButton();
           
           // Add event listener to image input
           document.getElementById('image').addEventListener('change', fetchAndSetDominantColor);
@@ -313,7 +314,7 @@ function uploadImage(file) {
     });
   }
 
-  addButton.addEventListener('click', () => {
+addButton.addEventListener('click', () => {
     editingId = null;
     document.getElementById('text').value = '';
     document.getElementById('description').value = '';
@@ -322,16 +323,31 @@ function uploadImage(file) {
     document.getElementById('imageUpload').value = ''; // Clear any previous file selection
     document.getElementById('accentColor').value = '#4CAF50';
     modal.style.display = 'block';
-  
+    enableSaveButton();
+
     document.getElementById('image').addEventListener('change', fetchAndSetDominantColor);
     document.getElementById('imageUpload').addEventListener('change', fetchAndSetDominantColor);
-  });
+});
 
 cancelButton.addEventListener('click', () => {
     modal.style.display = 'none';
 });
 
+function disableSaveButton() {
+    saveButton.disabled = true;
+    saveButton.style.opacity = '0.5';
+    saveButton.style.cursor = 'not-allowed';
+}
+
+function enableSaveButton() {
+    saveButton.disabled = false;
+    saveButton.style.opacity = '1';
+    saveButton.style.cursor = 'pointer';
+}
+
 saveButton.addEventListener('click', async () => {
+    disableSaveButton();
+
     const text = document.getElementById('text').value;
     const description = document.getElementById('description').value;
     const timeInputSeconds = document.getElementById('time').value;
@@ -343,6 +359,7 @@ saveButton.addEventListener('click', async () => {
     const timeSeconds = timeInputSeconds === '' ? null : Number(timeInputSeconds);
     if (timeSeconds !== null && !isNaN(timeSeconds) && timeSeconds < 4) {
         alert('Le temps minimum est de 4 secondes');
+        enableSaveButton();
         return;
     }
 
@@ -390,6 +407,12 @@ saveButton.addEventListener('click', async () => {
             loadKioskData();
             editingId = null;
         }
+        enableSaveButton();
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Une erreur est survenue. Veuillez réessayer.');
+        enableSaveButton();
     });
 });
 
