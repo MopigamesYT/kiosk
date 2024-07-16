@@ -1,9 +1,12 @@
+* {
+    cursor: none;
+}
+
 body {
     font-family: 'Helvetica Neue', Arial, sans-serif;
     margin: 0;
     padding: 0;
     overflow: hidden;
-    cursor: none;
 }
 
 #container {
