@@ -30,7 +30,7 @@ adminButton.addEventListener('click', () => {
 });
 
 document.addEventListener('mousemove', (event) => {
-    if (!mouseActive) return; // Ignore mouse movements for the first 2 seconds
+    if (!mouseActive) return;
 
     if (!cursorVisible) {
         cursor.style.animation = 'fadeInUp 0.5s forwards';
