@@ -4,6 +4,30 @@ let slideshowInterval;
 let isInitialLoad = true;
 let previousTheme = '';
 let globalSettings = {};
+let cursorVisible = false;
+
+const cursor = document.createElement('div');
+cursor.style.width = '10px'; // Adjust the size as needed
+cursor.style.height = '10px'; // Adjust the size as needed
+cursor.style.backgroundColor = '#fff'; // Cursor color
+cursor.style.borderRadius = '50%'; // Make it circular
+cursor.style.position = 'absolute';
+cursor.style.pointerEvents = 'none'; // So it doesn't block mouse events
+document.body.appendChild(cursor);
+
+document.addEventListener('mousemove', (event) => {
+    cursorVisible = true;
+    cursor.style.left = `${event.clientX}px`;
+    cursor.style.top = `${event.clientY}px`;
+    cursor.style.opacity = '1'; // Show cursor
+    clearTimeout(cursorTimeout); // Reset timeout
+    cursorTimeout = setTimeout(() => {
+        cursor.style.opacity = '0'; // Hide cursor after delay
+        cursorVisible = false;
+    }, 1000); // Hide after 1 second of inactivity
+});
+
+let cursorTimeout;
 
 function toggleFullScreen(element) {
     if (!document.fullscreenElement) {
