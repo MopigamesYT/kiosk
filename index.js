@@ -16,15 +16,17 @@ app.use(express.static('public'));
 app.post('/kiosk/:id/toggle-visibility', (req, res) => {
   const id = parseInt(req.params.id);
   let kioskData = readKioskData();
-  const itemIndex = kioskData.findIndex(item => item.id === id);
+  const itemIndex = kioskData.slides.findIndex(item => item.id === id); // Use slides array
+
   if (itemIndex !== -1) {
-    kioskData[itemIndex].visibility = !kioskData[itemIndex].visibility;
+    kioskData.slides[itemIndex].visibility = !kioskData.slides[itemIndex].visibility;
     writeKioskData(kioskData);
-    res.json({ success: true, updatedData: kioskData });
+    res.json({ success: true, updatedData: kioskData.slides });
   } else {
     res.status(404).json({ success: false, message: 'Item not found' });
   }
 });
+
 
 function readKioskData() {
   const filePath = path.join(__dirname, 'kiosk.json');
@@ -111,11 +113,24 @@ app.delete('/kiosk/:id', (req, res) => {
 app.post('/kiosk/reorder', (req, res) => {
   const newOrder = req.body;
   let kioskData = readKioskData();
-  kioskData = newOrder.map(id => kioskData.find(item => item.id === id));
-  kioskData = reorganizeIds(kioskData);
+  
+  // Validate newOrder
+  if (!Array.isArray(newOrder)) {
+      return res.status(400).json({ success: false, message: 'Invalid order format' });
+  }
+
+  // Reorganize kioskData based on new order
+  const orderedSlides = newOrder.map(id => kioskData.slides.find(item => item.id === id)).filter(Boolean);
+  
+  if (orderedSlides.length !== newOrder.length) {
+      return res.status(400).json({ success: false, message: 'Some items were not found' });
+  }
+
+  kioskData.slides = reorganizeIds(orderedSlides); // Reassign with new order
   writeKioskData(kioskData);
-  res.json({ success: true, updatedData: kioskData });
+  res.json({ success: true, updatedData: kioskData.slides });
 });
+
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running at http://0.0.0.0:${PORT}`);
