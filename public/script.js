@@ -454,7 +454,6 @@ saveButton.addEventListener('click', async () => {
                 accentColor = await getDominantColor(image);
             } catch (error) {
                 console.error('Color extraction failed:', error);
-                // Keep default color if extraction fails
             }
         }
     }
