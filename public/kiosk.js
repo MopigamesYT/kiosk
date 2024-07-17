@@ -16,6 +16,7 @@ cursor.style.backgroundColor = '#fff';
 cursor.style.borderRadius = '50%';
 cursor.style.position = 'absolute';
 cursor.style.pointerEvents = 'none';
+cursor.style.zIndex = '9999';
 document.body.appendChild(cursor);
 
 let cursorTimeout;
@@ -33,6 +34,7 @@ document.addEventListener('mousemove', (event) => {
 
     if (!cursorVisible) {
         cursor.style.animation = 'fadeInUp 0.5s forwards';
+        adminButton.style.animation = 'fadeInUp 0.5s forwards'; // Apply fade-in animation to the admin button
     }
     cursorVisible = true;
     cursor.style.left = `${event.clientX}px`;
@@ -43,21 +45,22 @@ document.addEventListener('mousemove', (event) => {
     const slidesElements = document.getElementById('slideshow').getElementsByClassName('slide');
     if (slidesElements.length > 0) {
         adminButton.style.display = 'block'; // Show button only when slides are present and mouse moves
+        adminButton.style.opacity = '1';
     }
 
     clearTimeout(cursorTimeout);
     cursorTimeout = setTimeout(() => {
         cursor.style.animation = 'fadeOut 0.5s forwards';
+        adminButton.style.animation = 'fadeOut 0.5s forwards'; // Apply fade-out animation to the admin button
         setTimeout(() => {
             cursor.style.opacity = '0';
             cursorVisible = false;
             cursor.style.animation = 'none';
+            adminButton.style.display = 'none'; // Hide the admin button after fade-out animation
         }, 500);
-        
-        // Hide the admin button if cursor is inactive
-        adminButton.style.display = 'none';
     }, 1000);
 });
+
 
 function toggleFullScreen(element) {
     if (!document.fullscreenElement) {
@@ -167,20 +170,17 @@ function updateTheme() {
     }else if (globalSettings.theme === 'summer') {
         themeContainer.innerHTML = `
         <style>
-            #slideshow {
-                position: relative;
-                z-index: 1;
-            }
             .ocean {
                 height: 100px;
                 width: 100%;
                 position: fixed;
                 bottom: 0;
                 left: 0;
-                z-index: 9999;
+                z-index: 1;
                 pointer-events: none;
             }
             .wave {
+                z-index: 1;
                 background: url(https://s3-us-west-2.amazonaws.com/s.cdpn.io/85486/wave.svg) repeat-x;
                 position: absolute;
                 width: 6400px;
