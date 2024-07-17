@@ -226,7 +226,7 @@ body {
     border-radius: 5px;
     cursor: pointer;
     transition: background-color 0.3s ease;
-    z-index: 10; /* Ensure it's on top */
+    z-index: 50; /* Ensure it's on top */
     opacity: 0;
     animation-duration: 0.5s;
     animation-fill-mode: forwards;
