@@ -306,6 +306,7 @@ function editKioskItem(id) {
 
           editingId = id;
           const modal = document.getElementById('modal');
+          modal.dataset.currentVisibility = item.visibility;
           if (modal) modal.style.display = 'block';
           enableSaveButton();
           
@@ -423,6 +424,7 @@ saveButton.addEventListener('click', async () => {
     const timeInputSeconds = document.getElementById('time').value;
     let image = document.getElementById('image').value;
     let accentColor = document.getElementById('accentColor').value;
+    const visibilityInput = document.getElementById('visibility');
 
     const imageUpload = document.getElementById('imageUpload');
 
@@ -459,7 +461,9 @@ saveButton.addEventListener('click', async () => {
 
     const timeMilliseconds = timeSeconds ? timeSeconds * 1000 : null;
 
-    const data = { text, description, time: timeMilliseconds, image, accentColor, visibility: true };
+    const visibility = editingId ? (modal.dataset.currentVisibility === 'true') : visibilityInput.checked;
+
+    const data = { text, description, time: timeMilliseconds, image, accentColor, visibility };
     const method = editingId ? 'PUT' : 'POST';
     const url = editingId ? `/kiosk/${editingId}` : '/kiosk';
 
