@@ -26,30 +26,30 @@ function toggleVisibility(id) {
     fetch(`/kiosk/${id}/toggle-visibility`, {
         method: 'POST',
     })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            renderKioskItems(data.updatedData);
-        } else {
-            console.error('Failed to toggle visibility');
-        }
-    })
-    .catch(error => {
-        console.error('Error toggling visibility:', error);
-    });
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                renderKioskItems(data.updatedData);
+            } else {
+                console.error('Failed to toggle visibility');
+            }
+        })
+        .catch(error => {
+            console.error('Error toggling visibility:', error);
+        });
 }
 
 function getDominantColor(imageUrl) {
     return new Promise((resolve, reject) => {
         const img = new Image();
         img.crossOrigin = "Anonymous";
-        img.onload = function() {
+        img.onload = function () {
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
             canvas.width = this.width;
             canvas.height = this.height;
             ctx.drawImage(this, 0, 0, this.width, this.height);
-            
+
             const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
             const data = imageData.data;
             let r = 0, g = 0, b = 0;
@@ -69,7 +69,7 @@ function getDominantColor(imageUrl) {
                 r = Math.floor(r / count);
                 g = Math.floor(g / count);
                 b = Math.floor(b / count);
-                
+
                 // Convert to hex
                 const hex = '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
                 resolve(hex);
@@ -86,10 +86,10 @@ function fetchAndSetDominantColor() {
     const imageUrl = document.getElementById('image').value;
     const imageFile = document.getElementById('imageUpload').files[0];
     const accentColorInput = document.getElementById('accentColor');
-    
+
     if (imageFile) {
         const reader = new FileReader();
-        reader.onload = function(e) {
+        reader.onload = function (e) {
             getDominantColor(e.target.result)
                 .then(color => {
                     accentColorInput.value = color;
@@ -163,7 +163,7 @@ function addItemListeners() {
     const deleteButtons = document.querySelectorAll('.delete-btn');
     const editButtons = document.querySelectorAll('.edit-btn');
     const visibilityButtons = document.querySelectorAll('.visibility-btn');
-    
+
     deleteButtons.forEach(button => {
         button.addEventListener('click', (e) => {
             const id = parseInt(e.target.getAttribute('data-id'));
@@ -262,89 +262,89 @@ function updateOrder() {
         },
         body: JSON.stringify(newOrder),
     })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            renderKioskItems(data.updatedData);
-        }
-    });
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                renderKioskItems(data.updatedData);
+            }
+        });
 }
 
 function deleteKioskItem(id) {
     fetch(`/kiosk/${id}`, {
         method: 'DELETE',
     })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            renderKioskItems(data.updatedData);
-        }
-    });
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                renderKioskItems(data.updatedData);
+            }
+        });
 }
 
 function editKioskItem(id) {
     fetch('/kiosk')
-      .then(response => response.json())
-      .then(data => {
-        const item = data.find(item => item.id === id);
-        if (item) {
-          const textInput = document.getElementById('text');
-          const descriptionInput = document.getElementById('description');
-          const timeInput = document.getElementById('time');
-          const imageInput = document.getElementById('image');
-          const accentColorInput = document.getElementById('accentColor');
-          const visibilityInput = document.getElementById('visibility');
-          const imageUploadInput = document.getElementById('imageUpload');
+        .then(response => response.json())
+        .then(data => {
+            const item = data.find(item => item.id === id);
+            if (item) {
+                const textInput = document.getElementById('text');
+                const descriptionInput = document.getElementById('description');
+                const timeInput = document.getElementById('time');
+                const imageInput = document.getElementById('image');
+                const accentColorInput = document.getElementById('accentColor');
+                const visibilityInput = document.getElementById('visibility');
+                const imageUploadInput = document.getElementById('imageUpload');
 
-          if (textInput) textInput.value = item.text || '';
-          if (descriptionInput) descriptionInput.value = item.description || '';
-          if (timeInput) timeInput.value = item.time ? item.time / 1000 : '';
-          if (imageInput) imageInput.value = item.image || '';
-          if (accentColorInput) accentColorInput.value = item.accentColor || '#4CAF50';
-          if (visibilityInput) visibilityInput.checked = item.visibility;
-          if (imageUploadInput) imageUploadInput.value = ''; // Clear any previous file selection
+                if (textInput) textInput.value = item.text || '';
+                if (descriptionInput) descriptionInput.value = item.description || '';
+                if (timeInput) timeInput.value = item.time ? item.time / 1000 : '';
+                if (imageInput) imageInput.value = item.image || '';
+                if (accentColorInput) accentColorInput.value = item.accentColor || '#4CAF50';
+                if (visibilityInput) visibilityInput.checked = item.visibility;
+                if (imageUploadInput) imageUploadInput.value = ''; // Clear any previous file selection
 
-          editingId = id;
-          const modal = document.getElementById('modal');
-          modal.dataset.currentVisibility = item.visibility;
-          if (modal) modal.style.display = 'block';
-          enableSaveButton();
-          
-          // Add event listener to image input
-          if (imageInput) {
-            imageInput.addEventListener('change', fetchAndSetDominantColor);
-          }
-          
-          // Fetch dominant color if no accent color is set
-          if (!item.accentColor || item.accentColor === '#4CAF50') {
-            fetchAndSetDominantColor();
-          }
-        } else {
-          console.error('Item not found:', id);
-        }
-      })
-      .catch(error => {
-        console.error('Error fetching kiosk data:', error);
-      });
+                editingId = id;
+                const modal = document.getElementById('modal');
+                modal.dataset.currentVisibility = item.visibility;
+                if (modal) modal.style.display = 'block';
+                enableSaveButton();
+
+                // Add event listener to image input
+                if (imageInput) {
+                    imageInput.addEventListener('change', fetchAndSetDominantColor);
+                }
+
+                // Fetch dominant color if no accent color is set
+                if (!item.accentColor || item.accentColor === '#4CAF50') {
+                    fetchAndSetDominantColor();
+                }
+            } else {
+                console.error('Item not found:', id);
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching kiosk data:', error);
+        });
 }
 
 function uploadImage(file) {
     const formData = new FormData();
     formData.append('image', file);
-  
+
     return fetch('/upload', {
-      method: 'POST',
-      body: formData
+        method: 'POST',
+        body: formData
     })
-    .then(response => response.json())
-    .then(data => {
-      if (data.success) {
-        return data.imagePath;
-      } else {
-        throw new Error('Upload failed');
-      }
-    });
-  }
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                return data.imagePath;
+            } else {
+                throw new Error('Upload failed');
+            }
+        });
+}
 
 addButton.addEventListener('click', () => {
     editingId = null;
@@ -372,7 +372,7 @@ globalSettingsButton.addEventListener('click', () => {
 
 saveGlobalSettingsButton.addEventListener('click', () => {
     const theme = kioskThemeSelect.value;
-    
+
     fetch('/global-settings', {
         method: 'POST',
         headers: {
@@ -380,19 +380,19 @@ saveGlobalSettingsButton.addEventListener('click', () => {
         },
         body: JSON.stringify({ theme }),
     })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            globalSettingsModal.style.display = 'none';
-            alert('Paramètres globaux sauvegardés avec succès');
-        } else {
-            alert('Erreur lors de la sauvegarde des paramètres globaux');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Une erreur est survenue. Veuillez réessayer.');
-    });
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                globalSettingsModal.style.display = 'none';
+                alert('Paramètres globaux sauvegardés avec succès');
+            } else {
+                alert('Erreur lors de la sauvegarde des paramètres globaux');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Une erreur est survenue. Veuillez réessayer.');
+        });
 });
 
 cancelGlobalSettingsButton.addEventListener('click', () => {
@@ -411,7 +411,7 @@ function enableSaveButton() {
     saveButton.style.cursor = 'pointer';
 }
 
-document.getElementById('goToKioskBtn').addEventListener('click', function() {
+document.getElementById('goToKioskBtn').addEventListener('click', function () {
     window.location.href = '/'; // Adjust the URL as necessary
 });
 
@@ -460,7 +460,9 @@ saveButton.addEventListener('click', async () => {
 
     const timeMilliseconds = timeSeconds ? timeSeconds * 1000 : null;
 
-    const visibility = editingId ? (modal.dataset.currentVisibility === 'true') : visibilityInput.checked;
+    const visibility = editingId
+        ? (modal.dataset.currentVisibility === 'true')
+        : (visibilityInput ? visibilityInput.checked : true);
 
     const data = { text, description, time: timeMilliseconds, image, accentColor, visibility };
     const method = editingId ? 'PUT' : 'POST';
@@ -473,20 +475,20 @@ saveButton.addEventListener('click', async () => {
         },
         body: JSON.stringify(data),
     })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            modal.style.display = 'none';
-            loadKioskData();
-            editingId = null;
-        }
-        enableSaveButton();
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Une erreur est survenue. Veuillez réessayer.');
-        enableSaveButton();
-    });
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                modal.style.display = 'none';
+                loadKioskData();
+                editingId = null;
+            }
+            enableSaveButton();
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Une erreur est survenue. Veuillez réessayer.');
+            enableSaveButton();
+        });
 });
 
 function setTheme(isDark) {
