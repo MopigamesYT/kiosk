@@ -217,7 +217,7 @@ function updateTheme() {
             <style>
                 .snowflake {
                   color: #fff;
-                  font-size: 1em;
+                  font-size: 2em;
                   font-family: Arial, sans-serif;
                   text-shadow: 0 0 5px #000;
                 }
