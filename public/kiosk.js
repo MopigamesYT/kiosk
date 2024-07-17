@@ -3,52 +3,41 @@ let currentSlideIndex = 0;
 let slideshowInterval;
 let isInitialLoad = true;
 let previousTheme = '';
-
+let globalSettings = {};
 
 function toggleFullScreen(element) {
     if (!document.fullscreenElement) {
-        if (element.requestFullscreen) {
-            element.requestFullscreen();
-        } else if (element.webkitRequestFullscreen) {
-            element.webkitRequestFullscreen();
-        } else if (element.msRequestFullscreen) {
-            element.msRequestFullscreen();
-        }
+        element.requestFullscreen ? element.requestFullscreen() :
+        element.webkitRequestFullscreen ? element.webkitRequestFullscreen() :
+        element.msRequestFullscreen && element.msRequestFullscreen();
     } else {
-        if (document.exitFullscreen) {
-            document.exitFullscreen();
-        } else if (document.webkitExitFullscreen) {
-            document.webkitExitFullscreen();
-        } else if (document.msExitFullscreen) {
-            document.msExitFullscreen();
-        }
+        document.exitFullscreen ? document.exitFullscreen() :
+        document.webkitExitFullscreen ? document.webkitExitFullscreen() :
+        document.msExitFullscreen && document.msExitFullscreen();
     }
 }
 
-
 function loadContent() {
     if (isInitialLoad) {
-        showLoading(); // Show loading screen only on initial load
-      }
+        showLoading();
+    }
     const timestamp = new Date().getTime();
     fetch(`kiosk.json?t=${timestamp}`)
         .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
+            if (!response.ok) throw new Error('Network response was not ok');
             return response.json();
         })
         .then(data => {
             globalSettings = data.globalSettings || {};
             updateTheme();
             updateSlides(data.slides || []);
-            hideLoading(); // Hide loading screen after content is loaded
-            isInitialLoad = false; // Set flag to false after initial load
+            hideLoading();
+            isInitialLoad = false;
         })
         .catch(error => {
             console.error('Error loading kiosk data:', error);
             showNoSlidesMessage(error.message);
-            hideLoading(); // Hide loading screen even if there's an error
+            hideLoading();
         });
 }
 
@@ -61,15 +50,8 @@ function hideLoading() {
 }
 
 function updateSlides(data) {
-    if (data.length === 0) {
-        showNoSlidesMessage('No slides available');
-        return;
-    }
-
-    // Filter out slides with visibility set to false
     const visibleSlides = data.filter(item => item.visibility !== false);
 
-    // Check if there are no visible slides
     if (visibleSlides.length === 0) {
         showNoSlidesMessage('No visible slides available');
         return;
@@ -85,16 +67,7 @@ function updateSlides(data) {
 
     if (JSON.stringify(newSlides) !== JSON.stringify(slides)) {
         slides = newSlides;
-        const slideshow = document.getElementById('slideshow');
-        slideshow.innerHTML = '';
-        slides.forEach((slide, index) => {
-            slideshow.appendChild(createSlideElement(slide, index));
-        });
-        
-        if (isInitialLoad) {
-            startSlideshow();
-            isInitialLoad = false;
-        }
+        rebuildSlideshow();
     }
 }
 
@@ -140,16 +113,6 @@ function updateTheme() {
     }
 }
 
-function smoothTransition(newSlides) {
-    const slideshow = document.getElementById('slideshow');
-    slideshow.style.opacity = '0';
-    setTimeout(() => {
-        slides = newSlides;
-        rebuildSlideshow();
-        slideshow.style.opacity = '1';
-    }, 500);
-}
-
 function rebuildSlideshow() {
     const slideshow = document.getElementById('slideshow');
     slideshow.innerHTML = '';
@@ -165,7 +128,7 @@ function createSlideElement(slide, index) {
     slideElement.className = 'slide';
     slideElement.style.opacity = index === currentSlideIndex ? '1' : '0';
     slideElement.dataset.accentColor = slide.accentColor;
-   
+
     let content = `<h2 class="slide-title">${slide.text}</h2>`;
     if (slide.description) {
         content += `<p class="slide-description">${slide.description}</p>`;
@@ -173,7 +136,7 @@ function createSlideElement(slide, index) {
     if (slide.image) {
         content += `<img class="slide-image" src="${slide.image}" alt="${slide.text}">`;
     }
-   
+
     slideElement.innerHTML = content;
     return slideElement;
 }
@@ -195,78 +158,38 @@ function goToAdminPanel() {
 
 function showSlide(index) {
     const slideshow = document.getElementById('slideshow');
-    const slides = slideshow.getElementsByClassName('slide');
-    const currentSlide = slides[currentSlideIndex];
-    const nextSlide = slides[index];
+    const slidesElements = slideshow.getElementsByClassName('slide');
+    const currentSlide = slidesElements[currentSlideIndex];
+    const nextSlide = slidesElements[index];
 
-    // Fade out current slide
     currentSlide.style.opacity = '0';
-    
-    // Wait for fade out to complete before showing next slide
+
     setTimeout(() => {
-        // Hide all slides
-        for (let i = 0; i < slides.length; i++) {
-            slides[i].style.display = 'none';
-            const elements = slides[i].querySelectorAll('.slide-title, .slide-description, .slide-image');
-            elements.forEach(el => {
-                el.style.animation = 'none';
-                el.offsetHeight; // Trigger reflow
-                el.style.animation = null;
-            });
+        for (let i = 0; i < slidesElements.length; i++) {
+            slidesElements[i].style.display = 'none';
         }
 
-        // Show and fade in next slide
         nextSlide.style.display = 'flex';
         nextSlide.style.opacity = '0';
         setTimeout(() => {
             nextSlide.style.opacity = '1';
-            const nextSlideElements = nextSlide.querySelectorAll('.slide-title, .slide-description, .slide-image');
-            nextSlideElements.forEach(el => {
-                el.style.animation = 'none';
-                el.offsetHeight; // Trigger reflow
-                el.style.animation = null;
-            });
-        }, 50); // Small delay to ensure display change has taken effect
-
-        // Update background color
-        slideshow.style.backgroundColor = nextSlide.dataset.accentColor;
-
-        // Update current slide index
+            slideshow.style.backgroundColor = nextSlide.dataset.accentColor;
+        }, 50);
+        
         currentSlideIndex = index;
-    }, 1000); // This should match the transition duration in CSS
+    }, 1000);
 }
 
 function startSlideshow() {
     clearInterval(slideshowInterval);
-   
+
     function nextSlide() {
         const nextIndex = (currentSlideIndex + 1) % slides.length;
         showSlide(nextIndex);
     }
 
-    // Show the first slide immediately
     showSlide(currentSlideIndex);
-
-    // Set up the interval for subsequent slides
     slideshowInterval = setInterval(nextSlide, slides[currentSlideIndex].time);
-}
-
-function createSlideElement(slide, index) {
-    const slideElement = document.createElement('div');
-    slideElement.className = 'slide';
-    slideElement.style.opacity = index === currentSlideIndex ? '1' : '0';
-    slideElement.dataset.accentColor = slide.accentColor;
-   
-    let content = `<h2 class="slide-title">${slide.text}</h2>`;
-    if (slide.description) {
-        content += `<p class="slide-description">${slide.description}</p>`;
-    }
-    if (slide.image) {
-        content += `<img class="slide-image" src="${slide.image}" alt="${slide.text}">`;
-    }
-   
-    slideElement.innerHTML = content;
-    return slideElement;
 }
 
 function init() {
