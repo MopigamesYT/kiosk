@@ -4,9 +4,23 @@ const saveButton = document.getElementById('save');
 const cancelButton = document.getElementById('cancel');
 const kioskInfo = document.getElementById('kiosk-info');
 const themeToggle = document.getElementById('theme-toggle');
+const globalSettingsButton = document.getElementById('global-settings');
+const globalSettingsModal = document.getElementById('global-settings-modal');
+const saveGlobalSettingsButton = document.getElementById('save-global-settings');
+const cancelGlobalSettingsButton = document.getElementById('cancel-global-settings');
+const kioskThemeSelect = document.getElementById('kiosk-theme');
 let editingId = null;
 let placeholder = document.createElement('div');
 placeholder.className = 'placeholder';
+
+function loadGlobalSettings() {
+    fetch('/global-settings')
+        .then(response => response.json())
+        .then(data => {
+            kioskThemeSelect.value = data.theme || 'default';
+        })
+        .catch(error => console.error('Error loading global settings:', error));
+}
 
 function toggleVisibility(id) {
     fetch(`/kiosk/${id}/toggle-visibility`, {
@@ -350,6 +364,40 @@ cancelButton.addEventListener('click', () => {
     modal.style.display = 'none';
 });
 
+globalSettingsButton.addEventListener('click', () => {
+    loadGlobalSettings();
+    globalSettingsModal.style.display = 'block';
+});
+
+saveGlobalSettingsButton.addEventListener('click', () => {
+    const theme = kioskThemeSelect.value;
+    
+    fetch('/global-settings', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ theme }),
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            globalSettingsModal.style.display = 'none';
+            alert('Paramètres globaux sauvegardés avec succès');
+        } else {
+            alert('Erreur lors de la sauvegarde des paramètres globaux');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Une erreur est survenue. Veuillez réessayer.');
+    });
+});
+
+cancelGlobalSettingsButton.addEventListener('click', () => {
+    globalSettingsModal.style.display = 'none';
+});
+
 function disableSaveButton() {
     saveButton.disabled = true;
     saveButton.style.opacity = '0.5';
@@ -449,3 +497,4 @@ if (savedTheme !== null) {
 }
 
 loadKioskData();
+document.addEventListener('DOMContentLoaded', loadGlobalSettings);

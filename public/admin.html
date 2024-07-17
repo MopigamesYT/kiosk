@@ -10,11 +10,14 @@
 <body>
     <header>
         <h1>AdminKiosk</h1>
-        <button id="theme-toggle">Changer de thème</button>
+        <div>
+            <button id="theme-toggle">Changer de thème</button>
+            <button id="global-settings">Paramètres globaux</button>
+        </div>
     </header>
     <div id="kiosk-info"></div>
     <div id="add-button">+</div>
-    
+   
     <div id="modal" class="modal">
         <div class="modal-content">
             <h2>Ajouter une information de kiosque</h2>
@@ -25,7 +28,7 @@
             <div>
                 <label for="imageUpload">Ou uploader une image:</label>
                 <input type="file" id="imageUpload" accept="image/*">
-              </div>
+            </div>
             <div class="color-picker">
                 <label for="accentColor">Couleur:</label>
                 <input type="color" id="accentColor" value="#4CAF50">
@@ -33,6 +36,23 @@
             <div class="button-container">
                 <button id="save">Sauvegarder</button>
                 <button id="cancel">Annuler</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="global-settings-modal" class="modal">
+        <div class="modal-content">
+            <h2>Paramètres globaux du kiosque</h2>
+            <div>
+                <label for="kiosk-theme">Thème du kiosque:</label>
+                <select id="kiosk-theme">
+                    <option value="default">Par défaut</option>
+                    <option value="christmas">Noël</option>
+                </select>
+            </div>
+            <div class="button-container">
+                <button id="save-global-settings">Sauvegarder</button>
+                <button id="cancel-global-settings">Annuler</button>
             </div>
         </div>
     </div>

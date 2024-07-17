@@ -115,7 +115,8 @@ h1 {
     margin-top: 15px;
 }
 
-.edit-btn, .delete-btn {
+.edit-btn,
+.delete-btn {
     border: none;
     padding: 8px 15px;
     border-radius: 5px;
@@ -197,7 +198,8 @@ h1 {
     box-sizing: border-box;
 }
 
-input, textarea {
+input,
+textarea {
     width: 100%;
     margin-bottom: 15px;
     padding: 10px;
@@ -312,7 +314,8 @@ textarea {
         font-size: 1.2rem;
     }
 
-    .edit-btn, .delete-btn {
+    .edit-btn,
+    .delete-btn {
         padding: 6px 12px;
         font-size: 0.8rem;
     }
@@ -328,7 +331,9 @@ textarea {
         padding: 15px;
     }
 
-    input, textarea, .color-picker input[type="color"] {
+    input,
+    textarea,
+    .color-picker input[type="color"] {
         font-size: 16px;
     }
 
@@ -351,7 +356,8 @@ textarea {
         padding: 10px;
     }
 
-    .edit-btn, .delete-btn {
+    .edit-btn,
+    .delete-btn {
         padding: 5px 10px;
         font-size: 0.7rem;
     }
@@ -371,4 +377,34 @@ textarea {
         padding: 6px 10px;
         font-size: 0.8rem;
     }
+}
+
+#global-settings {
+    background-color: var(--button-bg);
+    color: var(--button-text);
+    border: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background-color 0.3s ease;
+    margin-left: 10px;
+}
+
+#global-settings:hover {
+    background-color: var(--button-hover);
+}
+
+#global-settings-modal .modal-content {
+    max-width: 400px;
+}
+
+#kiosk-theme {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 20px;
+    border: 1px solid var(--card-border);
+    border-radius: 5px;
+    background-color: var(--bg-color);
+    color: var(--text-color);
 }
