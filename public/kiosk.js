@@ -5,29 +5,59 @@ let isInitialLoad = true;
 let previousTheme = '';
 let globalSettings = {};
 let cursorVisible = false;
+let mouseActive = false;
 
 const cursor = document.createElement('div');
-cursor.style.width = '10px'; // Adjust the size as needed
-cursor.style.height = '10px'; // Adjust the size as needed
-cursor.style.backgroundColor = '#fff'; // Cursor color
-cursor.style.borderRadius = '50%'; // Make it circular
+const adminButton = document.getElementById('admin-button');
+adminButton.style.display = 'none';
+cursor.style.width = '10px';
+cursor.style.height = '10px';
+cursor.style.backgroundColor = '#fff';
+cursor.style.borderRadius = '50%';
 cursor.style.position = 'absolute';
-cursor.style.pointerEvents = 'none'; // So it doesn't block mouse events
+cursor.style.pointerEvents = 'none';
 document.body.appendChild(cursor);
 
+let cursorTimeout;
+
+setTimeout(() => {
+    mouseActive = true; // Allow mouse movement registration after 2 seconds
+}, 2000);
+
+adminButton.addEventListener('click', () => {
+    window.location.href = '/admin';
+});
+
 document.addEventListener('mousemove', (event) => {
+    if (!mouseActive) return; // Ignore mouse movements for the first 2 seconds
+
+    if (!cursorVisible) {
+        cursor.style.animation = 'fadeInUp 0.5s forwards';
+    }
     cursorVisible = true;
     cursor.style.left = `${event.clientX}px`;
     cursor.style.top = `${event.clientY}px`;
-    cursor.style.opacity = '1'; // Show cursor
-    clearTimeout(cursorTimeout); // Reset timeout
-    cursorTimeout = setTimeout(() => {
-        cursor.style.opacity = '0'; // Hide cursor after delay
-        cursorVisible = false;
-    }, 1000); // Hide after 1 second of inactivity
-});
+    cursor.style.opacity = '1';
 
-let cursorTimeout;
+    // Show the admin button if slides are present
+    const slidesElements = document.getElementById('slideshow').getElementsByClassName('slide');
+    if (slidesElements.length > 0) {
+        adminButton.style.display = 'block'; // Show button only when slides are present and mouse moves
+    }
+
+    clearTimeout(cursorTimeout);
+    cursorTimeout = setTimeout(() => {
+        cursor.style.animation = 'fadeOut 0.5s forwards';
+        setTimeout(() => {
+            cursor.style.opacity = '0';
+            cursorVisible = false;
+            cursor.style.animation = 'none';
+        }, 500);
+        
+        // Hide the admin button if cursor is inactive
+        adminButton.style.display = 'none';
+    }, 1000);
+});
 
 function toggleFullScreen(element) {
     if (!document.fullscreenElement) {
@@ -201,6 +231,8 @@ function showSlide(index) {
         }, 50);
         
         currentSlideIndex = index;
+
+        // Show the admin button when a slide is visible
     }, 1000);
 }
 

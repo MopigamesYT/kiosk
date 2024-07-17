@@ -161,6 +161,16 @@ body {
         transform: translateY(0);
     }
 }
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+}
 
 .slide-title, .slide-description, .slide-image {
     opacity: 0;
@@ -181,4 +191,22 @@ body {
 .slide-image {
     animation-name: fadeInUp;
     animation-delay: 0.6s;
+}
+
+#admin-button {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    padding: 10px 20px;
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    z-index: 10000; /* Ensure it's on top */
+}
+
+#admin-button:hover {
+    background-color: #0056b3;
 }
