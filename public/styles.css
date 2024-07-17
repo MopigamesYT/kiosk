@@ -391,7 +391,23 @@ textarea {
     margin-left: 10px;
 }
 
+#goToKioskBtn {
+    background-color: var(--button-bg);
+    color: var(--button-text);
+    border: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background-color 0.3s ease;
+    margin-left: 10px;
+}
+
 #global-settings:hover {
+    background-color: var(--button-hover);
+}
+
+#goToKioskBtn:hover {
     background-color: var(--button-hover);
 }
 

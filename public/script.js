@@ -410,6 +410,11 @@ function enableSaveButton() {
     saveButton.style.cursor = 'pointer';
 }
 
+document.getElementById('goToKioskBtn').addEventListener('click', function() {
+    window.location.href = '/'; // Adjust the URL as necessary
+});
+
+
 saveButton.addEventListener('click', async () => {
     disableSaveButton();
 
