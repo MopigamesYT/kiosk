@@ -2,7 +2,7 @@ const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const app = express();
-const port = 3000;
+const PORT = process.env.PORT || 3000;
 const multer = require('multer');
 const { v4: uuidv4 } = require('uuid');
 
@@ -27,14 +27,21 @@ app.post('/kiosk/:id/toggle-visibility', (req, res) => {
 });
 
 function readKioskData() {
-  if (!fs.existsSync('kiosk.json')) {
-    fs.writeFileSync('kiosk.json', JSON.stringify([], null, 2));
+  const filePath = path.join(__dirname, 'kiosk.json');
+  if (!fs.existsSync(filePath)) {
+    const initialData = {
+      globalSettings: {
+        theme: "default"
+      },
+      slides: []
+    };
+    fs.writeFileSync(filePath, JSON.stringify(initialData, null, 2));
   }
-  return JSON.parse(fs.readFileSync('kiosk.json', 'utf8'));
+  return JSON.parse(fs.readFileSync(filePath, 'utf8'));
 }
-
 function writeKioskData(data) {
-  fs.writeFileSync('kiosk.json', JSON.stringify(data, null, 2));
+  const filePath = path.join(__dirname, 'kiosk.json');
+  fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
 }
 
 function reorganizeIds(data) {
@@ -48,20 +55,34 @@ app.get('/kiosk.json', (req, res) => {
 
 app.get('/kiosk', (req, res) => {
   const kioskData = readKioskData();
+  res.json(kioskData.slides);
+});
+
+app.get('/kiosk', (req, res) => {
+  const kioskData = readKioskData();
   res.json(kioskData);
+});
+
+app.get('/global-settings', (req, res) => {
+  const kioskData = readKioskData();
+  res.json(kioskData.globalSettings);
+});
+
+app.post('/global-settings', (req, res) => {
+  const kioskData = readKioskData();
+  kioskData.globalSettings = { ...kioskData.globalSettings, ...req.body };
+  writeKioskData(kioskData);
+  res.json({ success: true, globalSettings: kioskData.globalSettings });
 });
 
 app.use('/upload', express.static('public/upload'));
 
 app.post('/kiosk', (req, res) => {
   const kioskData = readKioskData();
-  const newEntry = {
-    id: kioskData.length > 0 ? Math.max(...kioskData.map(item => item.id)) + 1 : 1,
-    ...req.body
-  };
-  kioskData.push(newEntry);
+  const newItem = { id: kioskData.slides.length + 1, ...req.body };
+  kioskData.slides.push(newItem);
   writeKioskData(kioskData);
-  res.json({ success: true, newEntry });
+  res.json({ success: true, updatedData: kioskData.slides });
 });
 
 
@@ -96,8 +117,8 @@ app.post('/kiosk/reorder', (req, res) => {
   res.json({ success: true, updatedData: kioskData });
 });
 
-app.listen(port, '0.0.0.0', () => {
-  console.log(`Server running at http://0.0.0.0:${port}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server running at http://0.0.0.0:${PORT}`);
 });
 
 app.get('/admin', (req, res) => {
