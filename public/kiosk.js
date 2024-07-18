@@ -361,12 +361,13 @@ function showSlide(index) {
             nextSlide.style.opacity = '1';
             slideshow.style.backgroundColor = nextSlide.dataset.accentColor;
         }, 50);
-        
+
         currentSlideIndex = index;
 
         // Show the admin button when a slide is visible
     }, 1000);
 }
+
 
 function startSlideshow() {
     clearInterval(slideshowInterval);
@@ -374,11 +375,17 @@ function startSlideshow() {
     function nextSlide() {
         const nextIndex = (currentSlideIndex + 1) % slides.length;
         showSlide(nextIndex);
+
+        // Update the interval based on the new slide's time
+        clearInterval(slideshowInterval);
+        slideshowInterval = setInterval(nextSlide, slides[nextIndex].time);
     }
 
+    // Start the slideshow with the time of the first slide
     showSlide(currentSlideIndex);
     slideshowInterval = setInterval(nextSlide, slides[currentSlideIndex].time);
 }
+
 
 function init() {   
     loadContent();
