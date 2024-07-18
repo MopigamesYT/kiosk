@@ -8,7 +8,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 if (!fs.existsSync('public/upload')) {
-  fs.mkdirSync('public/upload');
+  fs.mkdirSync('public/upload', { recursive: true });
 }
 
 app.use(express.json());
@@ -92,7 +92,6 @@ app.get('/kiosk.json', (req, res) => {
   res.json(kioskData);
 });
 
-
 app.delete('/kiosk/:id', (req, res) => {
   const id = parseInt(req.params.id);
   const kioskData = readKioskData();
@@ -147,6 +146,36 @@ app.post('/upload', upload.single('image'), (req, res) => {
   } else {
     res.status(400).json({ success: false, message: 'No file uploaded' });
   }
+});
+
+app.post('/upload/:id', upload.single('image'), (req, res) => {
+  const id = parseInt(req.params.id);
+  const kioskData = readKioskData();
+  const itemIndex = kioskData.slides.findIndex(item => item.id === id);
+
+  if (itemIndex !== -1) {
+    if (req.file) {
+      kioskData.slides[itemIndex].imagePath = `/upload/${req.file.filename}`;
+      writeKioskData(kioskData);
+      res.json({ success: true, updatedData: kioskData.slides[itemIndex] });
+    } else {
+      res.status(400).json({ success: false, message: 'No file uploaded' });
+    }
+  } else {
+    res.status(404).json({ success: false, message: 'Item not found' });
+  }
+});
+
+app.post('/upload-watermark', upload.single('image'), (req, res) => {
+  if (req.file) {
+    res.json({ success: true, imagePath: `/upload/${req.file.filename}` });
+  } else {
+    res.status(400).json({ success: false, message: 'No file uploaded' });
+  }
+});
+
+app.get('/favicon.ico', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'favicon.ico'));
 });
 
 app.get('/admin', (req, res) => {

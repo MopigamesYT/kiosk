@@ -54,6 +54,20 @@
                     <option value="halloween">Halloween</option>
                 </select>
             </div>
+            <!-- New Watermark Section -->
+            <div>
+                <label for="watermark-upload">Uploader une image de filigrane:</label>
+                <input type="file" id="watermark-upload" accept="image/*">
+            </div>
+            <div>
+                <label for="watermark-position">Position du filigrane:</label>
+                <select id="watermark-position">
+                    <option value="top-left">Haut Gauche</option>
+                    <option value="top-right">Haut Droite</option>
+                    <option value="bottom-left">Bas Gauche</option>
+                    <option value="bottom-right">Bas Droite</option>
+                </select>
+            </div>
             <div class="button-container">
                 <button id="save-global-settings">Sauvegarder</button>
                 <button id="cancel-global-settings">Annuler</button>

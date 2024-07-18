@@ -9,6 +9,8 @@ const globalSettingsModal = document.getElementById('global-settings-modal');
 const saveGlobalSettingsButton = document.getElementById('save-global-settings');
 const cancelGlobalSettingsButton = document.getElementById('cancel-global-settings');
 const kioskThemeSelect = document.getElementById('kiosk-theme');
+const watermarkUpload = document.getElementById('watermark-upload');
+const watermarkPositionSelect = document.getElementById('watermark-position');
 let editingId = null;
 let placeholder = document.createElement('div');
 placeholder.className = 'placeholder';
@@ -18,6 +20,8 @@ function loadGlobalSettings() {
         .then(response => response.json())
         .then(data => {
             kioskThemeSelect.value = data.theme || 'default';
+            watermarkPositionSelect.value = data.watermarkPosition || 'bottom-right';
+            // Optionally, handle setting the watermark image preview if needed
         })
         .catch(error => console.error('Error loading global settings:', error));
 }
@@ -372,21 +376,69 @@ globalSettingsButton.addEventListener('click', () => {
 
 saveGlobalSettingsButton.addEventListener('click', () => {
     const theme = kioskThemeSelect.value;
+    const watermarkPosition = watermarkPositionSelect.value;
+    const watermarkFile = watermarkUpload.files[0];
 
-    fetch('/global-settings', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ theme }),
-    })
-        .then(response => response.json())
+    // Function to upload the watermark image if a new file is selected
+    const uploadWatermark = () => {
+        if (watermarkFile) {
+            const formData = new FormData();
+            formData.append('image', watermarkFile); // Ensure naming consistency with server-side
+
+            return fetch('/upload-watermark', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Upload failed');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    return data.imagePath; // Adjust according to server response
+                } else {
+                    throw new Error('Upload failed');
+                }
+            })
+            .catch(error => {
+                console.error('Error uploading watermark:', error);
+                throw error; // Propagate error to be caught by outer catch block
+            });
+        } else {
+            return Promise.resolve(null);
+        }
+    };
+
+    uploadWatermark()
+        .then(watermarkPath => {
+            const settings = {
+                theme,
+                watermarkPosition,
+                watermarkPath
+            };
+
+            return fetch('/global-settings', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(settings),
+            });
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to save global settings');
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.success) {
                 globalSettingsModal.style.display = 'none';
                 alert('Paramètres globaux sauvegardés avec succès');
             } else {
-                alert('Erreur lors de la sauvegarde des paramètres globaux');
+                throw new Error('Failed to save global settings');
             }
         })
         .catch(error => {
@@ -394,6 +446,7 @@ saveGlobalSettingsButton.addEventListener('click', () => {
             alert('Une erreur est survenue. Veuillez réessayer.');
         });
 });
+
 
 cancelGlobalSettingsButton.addEventListener('click', () => {
     globalSettingsModal.style.display = 'none';

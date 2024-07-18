@@ -17,6 +17,7 @@ cursor.style.borderRadius = '50%';
 cursor.style.position = 'absolute';
 cursor.style.pointerEvents = 'none';
 cursor.style.zIndex = '9999';
+cursor.style.boxShadow = '0 0 5px rgba(0, 0, 0, 0.5)';
 document.body.appendChild(cursor);
 
 let cursorTimeout;
