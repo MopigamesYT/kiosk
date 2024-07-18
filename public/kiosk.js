@@ -258,7 +258,7 @@ function updateTheme() {
               <div class="snowflake">💘</div>
               <div class="snowflake">💗</div>
               <div class="snowflake">💖</div>
-              <div class="snowflake">🩷</div>
+              <div class="snowflake">💖</div>
               <div class="snowflake">💞</div>
               <div class="snowflake">🍂</div>
               <div class="snowflake">💕</div>
