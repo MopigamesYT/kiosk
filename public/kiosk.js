@@ -171,6 +171,14 @@ function updateTheme() {
     } else if (globalSettings.theme === 'summer') {
         themeContainer.innerHTML = `
         <style>
+        .summer-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+    }
             .ocean {
                 height: 100px;
                 width: 100%;
@@ -180,6 +188,18 @@ function updateTheme() {
                 z-index: 1;
                 pointer-events: none;
             }
+                        .sun {
+                        z-index: 1;
+            position: absolute;
+            top: 10%;
+            left: 10%;
+            width: 100px;
+            height: 100px;
+            background: radial-gradient(circle, #FFD700, #FFA500);
+            border-radius: 50%;
+            box-shadow: 0 0 50px #FFD700;
+            animation: sun-pulse 4s infinite alternate;
+        }
             .wave {
                 z-index: 1;
                 background: url(https://s3-us-west-2.amazonaws.com/s.cdpn.io/85486/wave.svg) repeat-x;
@@ -206,7 +226,13 @@ function updateTheme() {
                 0%, 100% { transform: translateY(-15px); }
                 50% { transform: translateY(15px); }
             }
+                    @keyframes sun-pulse {
+            0% { transform: scale(1); }
+            100% { transform: scale(1.1); }
+        }
         </style>
+        
+            <div class="sun"></div>
         <div class="ocean">
             <div class="wave"></div>
             <div class="wave"></div>
