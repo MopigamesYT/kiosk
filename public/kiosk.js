@@ -86,12 +86,13 @@ function createOrUpdateWatermark() {
         const screenHeight = window.innerHeight;
         const smallerDimension = Math.min(screenWidth, screenHeight);
 
-        // Fixed size range: 100px to 200px
-        let size = Math.max(100, Math.min(200, smallerDimension * 0.15));
+        // Use the watermarkSize from globalSettings
+        const watermarkSizePercent = globalSettings.watermarkSize || 20;
+        const size = (smallerDimension * watermarkSizePercent) / 100;
 
         watermark.style.width = `${size}px`;
         watermark.style.height = `${size}px`;
-        watermark.style.objectFit = 'contain'; // Preserve aspect ratio within fixed size
+        watermark.style.objectFit = 'contain';
 
         // Adjust position based on globalSettings.watermarkPosition
         const margin = `${Math.max(10, smallerDimension * 0.02)}px`;

@@ -60,7 +60,11 @@ app.get('/global-settings', (req, res) => {
 
 app.post('/global-settings', (req, res) => {
   const kioskData = readKioskData();
-  kioskData.globalSettings = { ...kioskData.globalSettings, ...req.body };
+  kioskData.globalSettings = { 
+      ...kioskData.globalSettings, 
+      ...req.body,
+      watermarkSize: parseInt(req.body.watermarkSize) || 20 // Ensure it's a number
+  };
   writeKioskData(kioskData);
   res.json({ success: true, globalSettings: kioskData.globalSettings });
 });

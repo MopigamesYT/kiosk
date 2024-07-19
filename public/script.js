@@ -11,9 +11,18 @@ const cancelGlobalSettingsButton = document.getElementById('cancel-global-settin
 const kioskThemeSelect = document.getElementById('kiosk-theme');
 const watermarkUpload = document.getElementById('watermark-upload');
 const watermarkPositionSelect = document.getElementById('watermark-position');
+const watermarkSizeSlider = document.getElementById('watermark-size');
+const watermarkSizeValue = document.getElementById('watermark-size-value');
+
+
 let editingId = null;
 let placeholder = document.createElement('div');
 placeholder.className = 'placeholder';
+
+watermarkSizeSlider.addEventListener('input', function() {
+    watermarkSizeValue.textContent = this.value + '%';
+});
+
 
 function loadGlobalSettings() {
     fetch('/global-settings')
@@ -21,6 +30,8 @@ function loadGlobalSettings() {
         .then(data => {
             kioskThemeSelect.value = data.theme || 'default';
             watermarkPositionSelect.value = data.watermarkPosition || 'bottom-right';
+            watermarkSizeSlider.value = data.watermarkSize || 20;
+            watermarkSizeValue.textContent = (data.watermarkSize || 20) + '%';
             // Optionally, handle setting the watermark image preview if needed
         })
         .catch(error => console.error('Error loading global settings:', error));
@@ -377,6 +388,7 @@ globalSettingsButton.addEventListener('click', () => {
 saveGlobalSettingsButton.addEventListener('click', () => {
     const theme = kioskThemeSelect.value;
     const watermarkPosition = watermarkPositionSelect.value;
+    const watermarkSize = watermarkSizeSlider.value;
     const watermarkFile = watermarkUpload.files[0];
 
     // Function to upload the watermark image if a new file is selected
@@ -416,6 +428,7 @@ saveGlobalSettingsButton.addEventListener('click', () => {
             const settings = {
                 theme,
                 watermarkPosition,
+                watermarkSize,
                 watermarkPath
             };
 
