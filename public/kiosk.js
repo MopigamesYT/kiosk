@@ -62,17 +62,52 @@ document.addEventListener('mousemove', (event) => {
     }, 1000);
 });
 
-
-function toggleFullScreen(element) {
-    if (!document.fullscreenElement) {
-        element.requestFullscreen ? element.requestFullscreen() :
-        element.webkitRequestFullscreen ? element.webkitRequestFullscreen() :
-        element.msRequestFullscreen && element.msRequestFullscreen();
-    } else {
-        document.exitFullscreen ? document.exitFullscreen() :
-        document.webkitExitFullscreen ? document.webkitExitFullscreen() :
-        document.msExitFullscreen && document.msExitFullscreen();
+function createOrUpdateWatermark() {
+    let watermark = document.getElementById('watermark');
+    if (!watermark) {
+        watermark = document.createElement('img');
+        watermark.id = 'watermark';
+        document.body.appendChild(watermark);
     }
+
+    watermark.src = globalSettings.watermarkPath;
+    watermark.style.position = 'fixed';
+    watermark.style.maxWidth = '150px';
+    watermark.style.height = 'auto';
+    watermark.style.opacity = '0.5';
+    watermark.style.zIndex = '30';  // Lowered z-index
+    watermark.style.pointerEvents = 'none';  // Allow clicks to pass through
+
+    // Set position based on globalSettings.watermarkPosition
+    switch(globalSettings.watermarkPosition) {
+        case 'top-left':
+            watermark.style.top = '20px';
+            watermark.style.left = '20px';
+            break;
+        case 'top-right':
+            watermark.style.top = '20px';
+            watermark.style.right = '20px';
+            break;
+        case 'bottom-left':
+            watermark.style.bottom = '20px';
+            watermark.style.left = '20px';
+            break;
+        case 'bottom-right':
+        default:
+            watermark.style.bottom = '20px';
+            watermark.style.right = '20px';
+            break;
+    }
+
+    // Error handling
+    watermark.onerror = function() {
+        console.error('Failed to load watermark image:', globalSettings.watermarkPath);
+        watermark.style.display = 'none';
+    };
+
+    watermark.onload = function() {
+        watermark.style.display = 'block';
+    };
 }
 
 function loadContent() {
@@ -89,6 +124,7 @@ function loadContent() {
             globalSettings = data.globalSettings || {};
             updateTheme();
             updateSlides(data.slides || []);
+            createOrUpdateWatermark();  // Add this line
             hideLoading();
             isInitialLoad = false;
         })
@@ -365,6 +401,11 @@ function showSlide(index) {
 
         currentSlideIndex = index;
 
+        const watermark = document.getElementById('watermark');
+        if (watermark) {
+            watermark.style.color = 'rgba(255, 255, 255, 0.5)';
+        }
+
         // Show the admin button when a slide is visible
     }, 1000);
 }
@@ -390,7 +431,10 @@ function startSlideshow() {
 
 function init() {   
     loadContent();
-    setInterval(loadContent, 2000);
+    setInterval(() => {
+        loadContent();
+        createOrUpdateWatermark();  // Add this line
+    }, 2000);
 }
 
 window.onload = init;
