@@ -75,31 +75,31 @@ function createOrUpdateWatermark() {
     watermark.src = `${globalSettings.watermarkPath}?t=${timestamp}`;
 
     watermark.style.position = 'fixed';
-    watermark.style.maxWidth = '300px';
+    watermark.style.maxWidth = '15vw'; // 15% of viewport width
+    watermark.style.minWidth = '100px'; // Minimum size to ensure visibility
     watermark.style.height = 'auto';
     watermark.style.opacity = '0.5';
     watermark.style.zIndex = '9997';
     watermark.style.pointerEvents = 'none';
-    watermark.style.filter = "drop-shadow(0 2px 8px rgba(0, 0, 0, 0.8))";
 
     // Set position based on globalSettings.watermarkPosition
     switch(globalSettings.watermarkPosition) {
         case 'top-left':
-            watermark.style.top = '20px';
-            watermark.style.left = '20px';
+            watermark.style.top = '2vw';
+            watermark.style.left = '2vw';
             break;
         case 'top-right':
-            watermark.style.top = '20px';
-            watermark.style.right = '20px';
+            watermark.style.top = '2vw';
+            watermark.style.right = '2vw';
             break;
         case 'bottom-left':
-            watermark.style.bottom = '20px';
-            watermark.style.left = '20px';
+            watermark.style.bottom = '2vw';
+            watermark.style.left = '2vw';
             break;
         case 'bottom-right':
         default:
-            watermark.style.bottom = '20px';
-            watermark.style.right = '20px';
+            watermark.style.bottom = '2vw';
+            watermark.style.right = '2vw';
             break;
     }
 
