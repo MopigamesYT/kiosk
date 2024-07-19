@@ -80,6 +80,7 @@ function createOrUpdateWatermark() {
     watermark.style.opacity = '0.5';
     watermark.style.zIndex = '9997';
     watermark.style.pointerEvents = 'none';
+    watermark.style.filter = "drop-shadow(0 2px 8px rgba(0, 0, 0, 0.8))";
 
     // Set position based on globalSettings.watermarkPosition
     switch(globalSettings.watermarkPosition) {
