@@ -57,7 +57,7 @@ document.addEventListener('mousemove', (event) => {
             cursor.style.opacity = '0';
             cursorVisible = false;
             cursor.style.animation = 'none';
-            adminButton.style.display = 'none'; // Hide the admin button after fade-out animation
+            adminButton.style.display = 'none';
         }, 500);
     }, 1000);
 });
