@@ -86,7 +86,6 @@ function createOrUpdateWatermark() {
         const screenHeight = window.innerHeight;
         const smallerDimension = Math.min(screenWidth, screenHeight);
 
-        // Use the watermarkSize from globalSettings
         const watermarkSizePercent = globalSettings.watermarkSize || 20;
         const size = (smallerDimension * watermarkSizePercent) / 100;
 
@@ -96,23 +95,32 @@ function createOrUpdateWatermark() {
 
         // Adjust position based on globalSettings.watermarkPosition
         const margin = `${Math.max(10, smallerDimension * 0.02)}px`;
+        console.log('Updating watermark position:', globalSettings.watermarkPosition); // Add this log
         switch(globalSettings.watermarkPosition) {
             case 'top-left':
                 watermark.style.top = margin;
                 watermark.style.left = margin;
+                watermark.style.bottom = 'auto';
+                watermark.style.right = 'auto';
                 break;
             case 'top-right':
                 watermark.style.top = margin;
                 watermark.style.right = margin;
+                watermark.style.bottom = 'auto';
+                watermark.style.left = 'auto';
                 break;
             case 'bottom-left':
                 watermark.style.bottom = margin;
                 watermark.style.left = margin;
+                watermark.style.top = 'auto';
+                watermark.style.right = 'auto';
                 break;
             case 'bottom-right':
             default:
                 watermark.style.bottom = margin;
                 watermark.style.right = margin;
+                watermark.style.top = 'auto';
+                watermark.style.left = 'auto';
                 break;
         }
     }

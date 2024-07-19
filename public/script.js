@@ -32,7 +32,7 @@ function loadGlobalSettings() {
             watermarkPositionSelect.value = data.watermarkPosition || 'bottom-right';
             watermarkSizeSlider.value = data.watermarkSize || 20;
             watermarkSizeValue.textContent = (data.watermarkSize || 20) + '%';
-            // Optionally, handle setting the watermark image preview if needed
+            console.log('Loaded watermark position:', data.watermarkPosition); // Add this log
         })
         .catch(error => console.error('Error loading global settings:', error));
 }
