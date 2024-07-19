@@ -70,14 +70,16 @@ function createOrUpdateWatermark() {
         document.body.appendChild(watermark);
     }
 
-    watermark.src = globalSettings.watermarkPath;
-    watermark.style.borderRadius = '5px';
+    // Force reload of the image by adding a timestamp to the URL
+    const timestamp = new Date().getTime();
+    watermark.src = `${globalSettings.watermarkPath}?t=${timestamp}`;
+
     watermark.style.position = 'fixed';
-    watermark.style.maxWidth = '300px';
+    watermark.style.maxWidth = '150px';
     watermark.style.height = 'auto';
     watermark.style.opacity = '0.5';
-    watermark.style.zIndex = '30';  // Lowered z-index
-    watermark.style.pointerEvents = 'none';  // Allow clicks to pass through
+    watermark.style.zIndex = '9997';
+    watermark.style.pointerEvents = 'none';
 
     // Set position based on globalSettings.watermarkPosition
     switch(globalSettings.watermarkPosition) {
@@ -125,7 +127,7 @@ function loadContent() {
             globalSettings = data.globalSettings || {};
             updateTheme();
             updateSlides(data.slides || []);
-            createOrUpdateWatermark();  // Add this line
+            createOrUpdateWatermark();  // Always update the watermark
             hideLoading();
             isInitialLoad = false;
         })
@@ -432,10 +434,7 @@ function startSlideshow() {
 
 function init() {   
     loadContent();
-    setInterval(() => {
-        loadContent();
-        createOrUpdateWatermark();  // Add this line
-    }, 2000);
+    setInterval(loadContent, 2000);  // This will update everything, including the watermark
 }
 
 window.onload = init;
