@@ -73,34 +73,49 @@ function createOrUpdateWatermark() {
     // Force reload of the image by adding a timestamp to the URL
     const timestamp = new Date().getTime();
     watermark.src = `${globalSettings.watermarkPath}?t=${timestamp}`;
-
+    
+    // Set basic styles
     watermark.style.position = 'fixed';
-    watermark.style.maxWidth = '15vw'; // 15% of viewport width
-    watermark.style.minWidth = '100px'; // Minimum size to ensure visibility
-    watermark.style.height = 'auto';
     watermark.style.opacity = '0.5';
     watermark.style.zIndex = '30';
     watermark.style.pointerEvents = 'none';
+    watermark.style.filter = "drop-shadow(0 2px 8px rgba(0, 0, 0, 0.8))";
 
-    // Set position based on globalSettings.watermarkPosition
-    switch(globalSettings.watermarkPosition) {
-        case 'top-left':
-            watermark.style.top = '2vw';
-            watermark.style.left = '2vw';
-            break;
-        case 'top-right':
-            watermark.style.top = '2vw';
-            watermark.style.right = '2vw';
-            break;
-        case 'bottom-left':
-            watermark.style.bottom = '2vw';
-            watermark.style.left = '2vw';
-            break;
-        case 'bottom-right':
-        default:
-            watermark.style.bottom = '2vw';
-            watermark.style.right = '2vw';
-            break;
+    // Function to update watermark size based on screen size
+    function updateWatermarkSize() {
+        const screenWidth = window.innerWidth;
+        const screenHeight = window.innerHeight;
+        const smallerDimension = Math.min(screenWidth, screenHeight);
+
+        // Calculate size based on screen size
+        let size = smallerDimension * 0.17; // 20% of smaller dimension
+        size = Math.max(size, 100); // Minimum size of 100px
+        size = Math.min(size, 300); // Maximum size of 300px
+
+        watermark.style.width = `${size}px`;
+        watermark.style.height = 'auto'; // Maintain aspect ratio
+        
+        // Adjust position based on globalSettings.watermarkPosition
+        const margin = `${Math.max(10, smallerDimension * 0.02)}px`; // Min 10px, max 2% of smaller dimension
+        switch(globalSettings.watermarkPosition) {
+            case 'top-left':
+                watermark.style.top = margin;
+                watermark.style.left = margin;
+                break;
+            case 'top-right':
+                watermark.style.top = margin;
+                watermark.style.right = margin;
+                break;
+            case 'bottom-left':
+                watermark.style.bottom = margin;
+                watermark.style.left = margin;
+                break;
+            case 'bottom-right':
+            default:
+                watermark.style.bottom = margin;
+                watermark.style.right = margin;
+                break;
+        }
     }
 
     // Error handling
@@ -111,8 +126,17 @@ function createOrUpdateWatermark() {
 
     watermark.onload = function() {
         watermark.style.display = 'block';
+        updateWatermarkSize();
     };
+
+    // Update size on window resize
+    window.addEventListener('resize', updateWatermarkSize);
+
+    // Initial size update
+    updateWatermarkSize();
 }
+
+
 
 function loadContent() {
     if (isInitialLoad) {
