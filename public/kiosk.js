@@ -81,22 +81,20 @@ function createOrUpdateWatermark() {
     watermark.style.pointerEvents = 'none';
     watermark.style.filter = "drop-shadow(0 2px 8px rgba(0, 0, 0, 0.8))";
 
-    // Function to update watermark size based on screen size
     function updateWatermarkSize() {
         const screenWidth = window.innerWidth;
         const screenHeight = window.innerHeight;
         const smallerDimension = Math.min(screenWidth, screenHeight);
 
-        // Calculate size based on screen size
-        let size = smallerDimension * 0.17; // 20% of smaller dimension
-        size = Math.max(size, 100); // Minimum size of 100px
-        size = Math.min(size, 300); // Maximum size of 300px
+        // Fixed size range: 100px to 200px
+        let size = Math.max(100, Math.min(200, smallerDimension * 0.15));
 
         watermark.style.width = `${size}px`;
-        watermark.style.height = 'auto'; // Maintain aspect ratio
-        
+        watermark.style.height = `${size}px`;
+        watermark.style.objectFit = 'contain'; // Preserve aspect ratio within fixed size
+
         // Adjust position based on globalSettings.watermarkPosition
-        const margin = `${Math.max(10, smallerDimension * 0.02)}px`; // Min 10px, max 2% of smaller dimension
+        const margin = `${Math.max(10, smallerDimension * 0.02)}px`;
         switch(globalSettings.watermarkPosition) {
             case 'top-left':
                 watermark.style.top = margin;
