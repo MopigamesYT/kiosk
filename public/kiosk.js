@@ -75,7 +75,7 @@ function createOrUpdateWatermark() {
     watermark.src = `${globalSettings.watermarkPath}?t=${timestamp}`;
 
     watermark.style.position = 'fixed';
-    watermark.style.maxWidth = '150px';
+    watermark.style.maxWidth = '300px';
     watermark.style.height = 'auto';
     watermark.style.opacity = '0.5';
     watermark.style.zIndex = '9997';
