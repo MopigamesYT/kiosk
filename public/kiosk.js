@@ -79,7 +79,7 @@ function createOrUpdateWatermark() {
     watermark.style.minWidth = '100px'; // Minimum size to ensure visibility
     watermark.style.height = 'auto';
     watermark.style.opacity = '0.5';
-    watermark.style.zIndex = '9997';
+    watermark.style.zIndex = '30';
     watermark.style.pointerEvents = 'none';
 
     // Set position based on globalSettings.watermarkPosition
