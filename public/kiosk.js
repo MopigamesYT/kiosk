@@ -71,8 +71,9 @@ function createOrUpdateWatermark() {
     }
 
     watermark.src = globalSettings.watermarkPath;
+    watermark.style.borderRadius = '5px';
     watermark.style.position = 'fixed';
-    watermark.style.maxWidth = '150px';
+    watermark.style.maxWidth = '200px';
     watermark.style.height = 'auto';
     watermark.style.opacity = '0.5';
     watermark.style.zIndex = '30';  // Lowered z-index
