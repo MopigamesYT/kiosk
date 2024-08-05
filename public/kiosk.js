@@ -368,7 +368,81 @@ function updateTheme() {
             </div>
         </div>
         `;
-    } 
+    } else if (globalSettings.theme === 'easter') {
+        themeContainer.innerHTML = `
+        <style>
+        .easter-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            pointer-events: none;
+            z-index: 1;
+        }
+        .egg {
+            position: absolute;
+            font-size: 1.7em;
+            animation: float 10s infinite ease-in-out;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+        .grass-container {
+            position: fixed;
+            bottom: -20px;
+            left: 0;
+            width: 100%;
+            height: 120px;
+            overflow: hidden;
+        }
+        .grass {
+            position: relative;
+            width: 200%;
+            height: 100%;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 100"><path d="M0,100 Q250,0 500,100 T1000,100 L1000,100 L0,100 Z" fill="%2340a832" stroke="%23228B22" stroke-width="2" /></svg>') repeat-x;
+            background-size: 1000px 100px;
+            animation: wave 10s linear infinite;
+            transform: translate3d(0, 0, 0);
+        }
+        .flower {
+            position: absolute;
+            font-size: 1.5em;
+            animation: sway 3s ease-in-out infinite;
+        }
+        @keyframes wave {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+        @keyframes sway {
+            0%, 100% { transform: rotate(-5deg); }
+            50% { transform: rotate(5deg); }
+        }
+        </style>
+        <div class="easter-container">
+            <div class="grass-container">
+                <div class="grass"></div>
+            </div>
+        </div>
+        `;
+    
+        // Add random eggs
+        const eggEmojis = ['🥚', '🐣', '🐰'];
+        const colors = ['#FF69B4', '#87CEEB', '#98FB98', '#DDA0DD', '#F0E68C'];
+        for (let i = 0; i < 8; i++) {
+            const egg = document.createElement('div');
+            egg.className = 'egg';
+            egg.textContent = eggEmojis[Math.floor(Math.random() * eggEmojis.length)];
+            egg.style.left = `${Math.random() * 100}vw`;
+            egg.style.top = `${Math.random() * 70}vh`;
+            egg.style.color = colors[Math.floor(Math.random() * colors.length)];
+            egg.style.animationDelay = `${Math.random() * 10}s`;
+            themeContainer.querySelector('.easter-container').appendChild(egg);
+        }
+    }
+    
 }
 
 function rebuildSlideshow() {
