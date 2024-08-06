@@ -190,6 +190,52 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'kiosk.html'));
 });
 
+const jsonUpload = multer({
+  storage: multer.memoryStorage(),
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype !== 'application/json') {
+      return cb(new Error('Only JSON files are allowed'), false);
+    }
+    cb(null, true);
+  }
+});
+
+// Add this new endpoint
+app.post('/upload-kiosk-json', jsonUpload.single('kioskJson'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ success: false, message: 'No file uploaded' });
+  }
+
+  try {
+    // Parse the uploaded JSON
+    const uploadedData = JSON.parse(req.file.buffer.toString());
+
+    // Validate the structure of the uploaded JSON
+    if (!uploadedData.hasOwnProperty('globalSettings') || !uploadedData.hasOwnProperty('slides')) {
+      throw new Error('Invalid JSON structure');
+    }
+
+    // If we reach here, the JSON is valid. Write it to kiosk.json
+    const filePath = path.join(__dirname, 'kiosk.json');
+    fs.writeFileSync(filePath, JSON.stringify(uploadedData, null, 2));
+
+    res.json({ success: true, message: 'kiosk.json has been updated successfully' });
+  } catch (error) {
+    res.status(400).json({ success: false, message: 'Invalid JSON file', error: error.message });
+  }
+});
+
+app.get('/download-kiosk-json', (req, res) => {
+  const kioskData = readKioskData();
+  const now = new Date();
+  const date = now.toISOString().split('T')[0];
+  const time = now.toTimeString().split(' ')[0].replace(/:/g, '-');
+  const filename = `kiosk-${date}_${time}.json`;
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+  res.setHeader('Content-Type', 'application/json');
+  res.send(JSON.stringify(kioskData, null, 2));
+});
+
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running at http://0.0.0.0:${PORT}`);
 });

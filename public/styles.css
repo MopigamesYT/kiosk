@@ -109,6 +109,30 @@ h1 {
     margin-top: 10px;
 }
 
+#download-json,
+#upload-json {
+    background-color: var(--button-bg);
+    color: var(--button-text);
+    border: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    margin-left: 10px;
+}
+
+#download-json:hover,
+#upload-json:hover {
+    background-color: var(--button-hover);
+    transform: translateY(-2px);
+}
+
+#download-json:active,
+#upload-json:active {
+    transform: translateY(0);
+}
+
 .button-group {
     display: flex;
     justify-content: flex-end;

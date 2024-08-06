@@ -23,6 +23,59 @@ watermarkSizeSlider.addEventListener('input', function() {
     watermarkSizeValue.textContent = this.value + '%';
 });
 
+const downloadJsonButton = document.getElementById('download-json');
+const uploadJsonButton = document.getElementById('upload-json');
+const jsonFileInput = document.getElementById('json-file-input');
+
+downloadJsonButton.addEventListener('click', () => {
+    fetch('/download-kiosk-json')
+        .then(response => {
+            const filename = response.headers.get('Content-Disposition').split('filename=')[1].replace(/"/g, '');
+            return response.blob().then(blob => ({ blob, filename }));
+        })
+        .then(({ blob, filename }) => {
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+        })
+        .catch(error => console.error('Error downloading JSON:', error));
+});
+
+uploadJsonButton.addEventListener('click', () => {
+    jsonFileInput.click();
+});
+
+jsonFileInput.addEventListener('change', (event) => {
+    const file = event.target.files[0];
+    if (file) {
+        const formData = new FormData();
+        formData.append('kioskJson', file);
+
+        fetch('/upload-kiosk-json', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('JSON uploaded successfully. Reloading data...');
+                loadKioskData();
+            } else {
+                alert('Error uploading JSON: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error uploading JSON:', error);
+            alert('An error occurred while uploading the JSON file.');
+        });
+    }
+});
+
 
 function loadGlobalSettings() {
     fetch('/global-settings')
