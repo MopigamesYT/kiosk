@@ -87,7 +87,15 @@ function loadContent() {
             return response.json();
         })
         .then(data => {
+            const oldFontSettings = {
+                titleFontSize: globalSettings.titleFontSize,
+                descriptionFontSize: globalSettings.descriptionFontSize
+            };
             globalSettings = data.globalSettings || {};
+            if (oldFontSettings.titleFontSize !== globalSettings.titleFontSize ||
+                oldFontSettings.descriptionFontSize !== globalSettings.descriptionFontSize) {
+                updateSlides(data.slides || []);
+            }
             defaultTitleSize = globalSettings.titleFontSize || 48;
             defaultDescriptionSize = globalSettings.descriptionFontSize || 24;
             updateTheme();
@@ -126,6 +134,21 @@ function updateSlides(data) {
         time: item.time || 8000
     }));
 
+    // Update font sizes for existing slides even if content hasn't changed
+    const slideElements = document.getElementsByClassName('slide');
+    Array.from(slideElements).forEach(slideElement => {
+        const titleElement = slideElement.querySelector('.slide-title');
+        const descriptionElement = slideElement.querySelector('.slide-description');
+        
+        if (titleElement) {
+            titleElement.style.fontSize = `${globalSettings.titleFontSize || 48}px`;
+        }
+        if (descriptionElement) {
+            descriptionElement.style.fontSize = `${globalSettings.descriptionFontSize || 24}px`;
+        }
+    });
+
+    // Only rebuild slides if content has changed
     if (JSON.stringify(newSlides) !== JSON.stringify(slides)) {
         slides = newSlides;
         rebuildSlideshow();
