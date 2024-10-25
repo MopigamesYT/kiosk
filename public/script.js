@@ -9,15 +9,33 @@ const globalSettingsModal = document.getElementById('global-settings-modal');
 const saveGlobalSettingsButton = document.getElementById('save-global-settings');
 const cancelGlobalSettingsButton = document.getElementById('cancel-global-settings');
 const kioskThemeSelect = document.getElementById('kiosk-theme');
+const titleFontSize = document.getElementById('title-font-size');
+const descriptionFontSize = document.getElementById('description-font-size');
+const titleSizeDisplay = document.getElementById('title-size-display');
+const descriptionSizeDisplay = document.getElementById('description-size-display');
+
 let editingId = null;
 let placeholder = document.createElement('div');
 placeholder.className = 'placeholder';
+
+titleFontSize.addEventListener('input', () => {
+    titleSizeDisplay.textContent = `${titleFontSize.value}px`;
+});
+
+descriptionFontSize.addEventListener('input', () => {
+    descriptionSizeDisplay.textContent = `${descriptionFontSize.value}px`;
+});
+
 
 function loadGlobalSettings() {
     fetch('/global-settings')
         .then(response => response.json())
         .then(data => {
             kioskThemeSelect.value = data.theme || 'default';
+            titleFontSize.value = data.titleFontSize || 48;
+            descriptionFontSize.value = data.descriptionFontSize || 24;
+            titleSizeDisplay.textContent = `${titleFontSize.value}px`;
+            descriptionSizeDisplay.textContent = `${descriptionFontSize.value}px`;
         })
         .catch(error => console.error('Error loading global settings:', error));
 }
@@ -372,13 +390,19 @@ globalSettingsButton.addEventListener('click', () => {
 
 saveGlobalSettingsButton.addEventListener('click', () => {
     const theme = kioskThemeSelect.value;
+    const titleFontSizeValue = parseInt(titleFontSize.value);
+    const descriptionFontSizeValue = parseInt(descriptionFontSize.value);
 
     fetch('/global-settings', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ theme }),
+        body: JSON.stringify({
+            theme,
+            titleFontSize: titleFontSizeValue,
+            descriptionFontSize: descriptionFontSizeValue
+        }),
     })
         .then(response => response.json())
         .then(data => {

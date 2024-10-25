@@ -40,25 +40,38 @@
             </div>
         </div>
     </div>
-
-    <div id="global-settings-modal" class="modal">
-        <div class="modal-content">
-            <h2>Paramètres globaux du kiosque</h2>
-            <div>
-                <label for="kiosk-theme">Thème du kiosque:</label>
-                <select id="kiosk-theme">
-                    <option value="default">Par défaut</option>
-                    <option value="christmas">Noël</option>
-                    <option value="summer">Eté</option>
-                    <option value="halloween">Halloween</option>
-                </select>
+<div id="global-settings-modal" class="modal">
+    <div class="modal-content">
+        <h2>Paramètres globaux du kiosque</h2>
+        <div>
+            <label for="kiosk-theme">Thème du kiosque:</label>
+            <select id="kiosk-theme">
+                <option value="default">Par défaut</option>
+                <option value="christmas">Noël</option>
+                <option value="summer">Eté</option>
+                <option value="halloween">Halloween</option>
+                <option value="valentine">Saint-Valentin</option>
+                <option value="easter">Pâques</option>
+            </select>
+        </div>
+        <div class="font-size-controls">
+            <div class="font-control">
+                <label for="title-font-size">Taille du titre:</label>
+                <input type="range" id="title-font-size" min="32" max="72" value="48">
+                <span id="title-size-display">48px</span>
             </div>
-            <div class="button-container">
-                <button id="save-global-settings">Sauvegarder</button>
-                <button id="cancel-global-settings">Annuler</button>
+            <div class="font-control">
+                <label for="description-font-size">Taille de la description:</label>
+                <input type="range" id="description-font-size" min="16" max="36" value="24">
+                <span id="description-size-display">24px</span>
             </div>
         </div>
+        <div class="button-container">
+            <button id="save-global-settings">Sauvegarder</button>
+            <button id="cancel-global-settings">Annuler</button>
+        </div>
     </div>
+</div>
 
     <script src="script.js"></script>
 </body>
