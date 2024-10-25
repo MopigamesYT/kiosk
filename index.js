@@ -92,6 +92,36 @@ app.get('/kiosk.json', (req, res) => {
   res.json(kioskData);
 });
 
+// Add this new endpoint to your server.js file
+
+app.post('/import-config', (req, res) => {
+  try {
+      const newConfig = req.body;
+      
+      // Validate the incoming configuration
+      if (!newConfig || !newConfig.slides || !newConfig.globalSettings) {
+          return res.status(400).json({
+              success: false,
+              message: 'Invalid configuration format'
+          });
+      }
+
+      // Write the new configuration to file
+      writeKioskData(newConfig);
+
+      res.json({
+          success: true,
+          message: 'Configuration imported successfully'
+      });
+  } catch (error) {
+      console.error('Error importing configuration:', error);
+      res.status(500).json({
+          success: false,
+          message: 'Failed to import configuration'
+      });
+  }
+});
+
 
 app.delete('/kiosk/:id', (req, res) => {
   const id = parseInt(req.params.id);
@@ -196,3 +226,4 @@ app.get('/', (req, res) => {
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running at http://0.0.0.0:${PORT}`);
 });
+

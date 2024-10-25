@@ -535,3 +535,41 @@ input[type="range"]::-moz-range-thumb {
 .dark-theme .current-watermark {
     border-color: #444;
 }
+
+/* Add these styles to your existing CSS file */
+.config-io-settings {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid var(--card-border);
+}
+
+.config-buttons {
+    display: flex;
+    gap: 10px;
+    margin: 15px 0;
+}
+
+.config-btn {
+    background-color: var(--button-bg);
+    color: var(--button-text);
+    border: none;
+    padding: 8px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.config-btn:hover {
+    background-color: var(--button-hover);
+}
+
+.config-help {
+    font-size: 0.9em;
+    color: var(--text-color);
+    opacity: 0.8;
+    margin-top: 10px;
+}
+
+.import-wrapper {
+    position: relative;
+}

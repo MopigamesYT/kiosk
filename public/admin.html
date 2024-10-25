@@ -16,6 +16,7 @@
             <button id="global-settings">Paramètres globaux</button>
         </div>
     </header>
+    
     <div id="kiosk-info"></div>
     <div id="add-button">+</div>
    
@@ -66,8 +67,6 @@
                 <span id="description-size-display">24px</span>
             </div>
         </div>
-        <!-- Add this inside the global-settings-modal div in admin.html, 
-     right after the font-size-controls div -->
 <div class="watermark-settings">
     <h3>Paramètres du filigrane</h3>
     <div class="watermark-control">
@@ -101,6 +100,21 @@
         <input type="range" id="watermark-opacity" min="1" max="100" value="50">
         <span id="watermark-opacity-display">50%</span>
     </div>
+</div>
+<div class="config-io-settings">
+    <h3>Configuration Import/Export</h3>
+    <div class="config-buttons">
+        <button id="export-config" class="config-btn">
+            Export Configuration
+        </button>
+        <div class="import-wrapper">
+            <input type="file" id="import-config-input" accept=".json" style="display: none;">
+            <button id="import-config" class="config-btn">
+                Import Configuration
+            </button>
+        </div>
+    </div>
+    <p class="config-help">Export your current kiosk configuration or import a previously saved one.</p>
 </div>
         <div class="button-container">
             <button id="save-global-settings">Sauvegarder</button>

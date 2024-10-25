@@ -22,10 +22,18 @@ const watermarkSizeDisplay = document.getElementById('watermark-size-display');
 const watermarkOpacityDisplay = document.getElementById('watermark-opacity-display');
 const currentWatermarkImg = document.querySelector('#current-watermark img');
 const noWatermarkText = document.querySelector('.no-watermark');
+const exportConfigBtn = document.getElementById('export-config');
+const importConfigBtn = document.getElementById('import-config');
+const importConfigInput = document.getElementById('import-config-input');
 
 let editingId = null;
 let placeholder = document.createElement('div');
 placeholder.className = 'placeholder';
+
+
+exportConfigBtn.addEventListener('click', exportConfig);
+importConfigBtn.addEventListener('click', () => importConfigInput.click());
+importConfigInput.addEventListener('change', importConfig);
 
 watermarkSize.addEventListener('input', () => {
     watermarkSizeDisplay.textContent = `${watermarkSize.value}px`;
@@ -633,6 +641,177 @@ themeToggle.addEventListener('click', () => {
 const savedTheme = localStorage.getItem('darkTheme');
 if (savedTheme !== null) {
     setTheme(savedTheme === 'true');
+}
+
+function exportConfig() {
+    fetch('/kiosk.json')
+        .then(response => response.json())
+        .then(data => {
+            // Create a Blob with the JSON data
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = window.URL.createObjectURL(blob);
+            
+            // Create a temporary link to trigger the download
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `kiosk-config-${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            
+            // Cleanup
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        })
+        .catch(error => {
+            console.error('Error exporting configuration:', error);
+            alert('Échec de l\'exportation. Veuillez réessayer.');
+        });
+}
+
+// Define the schema structure once
+const CONFIG_SCHEMA = {
+    globalSettings: {
+        type: 'object',
+        properties: {
+            theme: {
+                type: 'string',
+                enum: ['default', 'christmas', 'summer', 'halloween', 'valentine', 'easter']
+            },
+            titleFontSize: { type: 'number', min: 32, max: 72 },
+            descriptionFontSize: { type: 'number', min: 16, max: 36 },
+            watermark: {
+                type: 'object',
+                properties: {
+                    enabled: { type: 'boolean' },
+                    position: {
+                        type: 'string',
+                        enum: ['top-left', 'top-right', 'bottom-left', 'bottom-right']
+                    },
+                    size: { type: 'number', min: 20, max: 200 },
+                    opacity: { type: 'number', min: 1, max: 100 },
+                    image: { type: 'string' }
+                }
+            }
+        }
+    },
+    slides: {
+        type: 'array',
+        items: {
+            type: 'object',
+            properties: {
+                id: { type: 'number' },
+                text: { type: 'string' },
+                description: { type: 'string' },
+                time: { type: ['number', 'null'] },
+                image: { type: 'string' },
+                accentColor: { type: 'string' },
+                visibility: { type: 'boolean' }
+            }
+        }
+    }
+};
+
+function validateType(value, schema) {
+    // Handle null values
+    if (value === null && Array.isArray(schema.type) && schema.type.includes('null')) {
+        return true;
+    }
+
+    // Handle arrays
+    if (schema.type === 'array' && Array.isArray(value)) {
+        if (!schema.items) return true;
+        return value.every(item => validateType(item, schema.items));
+    }
+
+    // Handle objects
+    if (schema.type === 'object' && typeof value === 'object') {
+        if (!schema.properties) return true;
+        return Object.keys(schema.properties).every(key => {
+            if (!value.hasOwnProperty(key)) return true; // Allow missing properties
+            return validateType(value[key], schema.properties[key]);
+        });
+    }
+
+    // Handle enums
+    if (schema.enum && !schema.enum.includes(value)) {
+        return false;
+    }
+
+    // Handle numbers with ranges
+    if (schema.type === 'number' && typeof value === 'number') {
+        if (schema.min !== undefined && value < schema.min) return false;
+        if (schema.max !== undefined && value > schema.max) return false;
+        return true;
+    }
+
+    // Handle basic types
+    if (Array.isArray(schema.type)) {
+        return schema.type.some(type => typeof value === type);
+    }
+    return typeof value === schema.type;
+}
+
+function validateConfig(config) {
+    try {
+        // Basic structure check
+        if (!config || typeof config !== 'object') {
+            return { isValid: false, error: 'Configuration must be an object' };
+        }
+
+        // Validate against schema
+        if (!validateType(config, { type: 'object', properties: CONFIG_SCHEMA })) {
+            return { isValid: false, error: 'Invalid configuration structure' };
+        }
+
+        return { isValid: true };
+    } catch (error) {
+        return { isValid: false, error: error.message };
+    }
+}
+
+// The rest of your import/export code remains the same
+function importConfig(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const config = JSON.parse(e.target.result);
+            const validationResult = validateConfig(config);
+            
+            if (!validationResult.isValid) {
+                throw new Error(`Configuration invalide: ${validationResult.error}`);
+            }
+
+            fetch('/import-config', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(config)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Configuration importée avec succès');
+                    loadKioskData();
+                    loadGlobalSettings();
+                } else {
+                    throw new Error(data.message || 'Échec de l\'importation');
+                }
+            })
+            .catch(error => {
+                console.error('Error importing configuration:', error);
+                alert('Échec de l\'importation. Vérifiez le format du fichier.');
+            });
+        } catch (error) {
+            console.error('Error parsing configuration:', error);
+            alert(`Fichier de configuration invalide: ${error.message}`);
+        }
+    };
+    reader.readAsText(file);
+    event.target.value = '';
 }
 
 loadKioskData();
