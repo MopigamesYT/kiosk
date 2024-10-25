@@ -13,10 +13,96 @@ const titleFontSize = document.getElementById('title-font-size');
 const descriptionFontSize = document.getElementById('description-font-size');
 const titleSizeDisplay = document.getElementById('title-size-display');
 const descriptionSizeDisplay = document.getElementById('description-size-display');
+const watermarkEnabled = document.getElementById('watermark-enabled');
+const watermarkUpload = document.getElementById('watermarkUpload');
+const watermarkPosition = document.getElementById('watermark-position');
+const watermarkSize = document.getElementById('watermark-size');
+const watermarkOpacity = document.getElementById('watermark-opacity');
+const watermarkSizeDisplay = document.getElementById('watermark-size-display');
+const watermarkOpacityDisplay = document.getElementById('watermark-opacity-display');
+const currentWatermarkImg = document.querySelector('#current-watermark img');
+const noWatermarkText = document.querySelector('.no-watermark');
 
 let editingId = null;
 let placeholder = document.createElement('div');
 placeholder.className = 'placeholder';
+
+watermarkSize.addEventListener('input', () => {
+    watermarkSizeDisplay.textContent = `${watermarkSize.value}px`;
+});
+
+watermarkOpacity.addEventListener('input', () => {
+    watermarkOpacityDisplay.textContent = `${watermarkOpacity.value}%`;
+});
+
+// Add watermark upload handler
+watermarkUpload.addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (file) {
+        const formData = new FormData();
+        formData.append('watermark', file);
+
+        try {
+            const response = await fetch('/upload-watermark', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await response.json();
+            
+            if (data.success) {
+                currentWatermarkImg.src = data.imagePath;
+                currentWatermarkImg.style.display = 'inline';
+                noWatermarkText.style.display = 'none';
+                saveWatermarkSettings(data.imagePath);
+            }
+        } catch (error) {
+            console.error('Error uploading watermark:', error);
+            alert('Error uploading watermark image');
+        }
+    }
+});
+
+// Add this function
+async function saveWatermarkSettings(imagePath = null) {
+    const settings = {
+        theme: kioskThemeSelect.value,
+        titleFontSize: parseInt(titleFontSize.value),
+        descriptionFontSize: parseInt(descriptionFontSize.value),
+        watermark: {
+            enabled: watermarkEnabled.checked,
+            position: watermarkPosition.value,
+            size: parseInt(watermarkSize.value),
+            opacity: parseInt(watermarkOpacity.value)
+        }
+    };
+
+    if (imagePath) {
+        settings.watermark.image = imagePath;
+    } else if (currentWatermarkImg.src) {
+        settings.watermark.image = currentWatermarkImg.src.split(window.location.origin).pop();
+    }
+
+    try {
+        const response = await fetch('/global-settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(settings)
+        });
+        const data = await response.json();
+        return data.success;
+    } catch (error) {
+        console.error('Error saving settings:', error);
+        return false;
+    }
+}
+
+// Add these event listeners
+[watermarkEnabled, watermarkPosition, watermarkSize, watermarkOpacity].forEach(control => {
+    control.addEventListener('change', () => saveWatermarkSettings());
+    if (control.type === 'range') {
+        control.addEventListener('input', () => saveWatermarkSettings());
+    }
+});
 
 titleFontSize.addEventListener('input', () => {
     titleSizeDisplay.textContent = `${titleFontSize.value}px`;
@@ -36,6 +122,23 @@ function loadGlobalSettings() {
             descriptionFontSize.value = data.descriptionFontSize || 24;
             titleSizeDisplay.textContent = `${titleFontSize.value}px`;
             descriptionSizeDisplay.textContent = `${descriptionFontSize.value}px`;
+            
+            // Add watermark settings loading
+            if (data.watermark) {
+                watermarkEnabled.checked = data.watermark.enabled || false;
+                watermarkPosition.value = data.watermark.position || 'bottom-right';
+                watermarkSize.value = data.watermark.size || 100;
+                watermarkOpacity.value = data.watermark.opacity || 50;
+                
+                if (data.watermark.image) {
+                    currentWatermarkImg.src = data.watermark.image;
+                    currentWatermarkImg.style.display = 'inline';
+                    noWatermarkText.style.display = 'none';
+                }
+                
+                watermarkSizeDisplay.textContent = `${watermarkSize.value}px`;
+                watermarkOpacityDisplay.textContent = `${watermarkOpacity.value}%`;
+            }
         })
         .catch(error => console.error('Error loading global settings:', error));
 }
@@ -438,6 +541,8 @@ function enableSaveButton() {
 document.getElementById('goToKioskBtn').addEventListener('click', function () {
     window.location.href = '/'; // Adjust the URL as necessary
 });
+
+
 
 
 saveButton.addEventListener('click', async () => {

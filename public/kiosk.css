@@ -248,5 +248,21 @@ body {
 }
 
 #theme-container.christmas {
-    z-index: 2; /* Ensure the snowflakes are above the snow patch */
+    z-index: 2; 
 }
+
+.watermark {
+    position: fixed;
+    z-index: 1000;
+    pointer-events: none;
+    transition: all 0.3s ease;
+}
+
+.watermark img {
+    transition: all 0.3s ease;
+}
+
+.watermark.top-left { top: 20px; left: 20px; }
+.watermark.top-right { top: 20px; right: 20px; }
+.watermark.bottom-left { bottom: 20px; left: 20px; }
+.watermark.bottom-right { bottom: 20px; right: 20px; }

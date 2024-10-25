@@ -149,6 +149,42 @@ app.post('/upload', upload.single('image'), (req, res) => {
   }
 });
 
+// Add to your server.js file
+
+// Set up watermark upload storage
+const watermarkStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+      const dir = 'public/watermarks';
+      if (!fs.existsSync(dir)) {
+          fs.mkdirSync(dir, { recursive: true });
+      }
+      cb(null, dir);
+  },
+  filename: (req, file, cb) => {
+      const uniqueSuffix = uuidv4();
+      cb(null, `watermark-${uniqueSuffix}${path.extname(file.originalname)}`);
+  }
+});
+
+const uploadWatermark = multer({ storage: watermarkStorage });
+
+app.post('/upload-watermark', uploadWatermark.single('watermark'), (req, res) => {
+  if (req.file) {
+      res.json({ 
+          success: true, 
+          imagePath: `/watermarks/${req.file.filename}` 
+      });
+  } else {
+      res.status(400).json({ 
+          success: false, 
+          message: 'No file uploaded' 
+      });
+  }
+});
+
+// Add watermark static serving
+app.use('/watermarks', express.static('public/watermarks'));
+
 app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });

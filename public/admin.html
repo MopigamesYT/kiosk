@@ -66,6 +66,42 @@
                 <span id="description-size-display">24px</span>
             </div>
         </div>
+        <!-- Add this inside the global-settings-modal div in admin.html, 
+     right after the font-size-controls div -->
+<div class="watermark-settings">
+    <h3>Paramètres du filigrane</h3>
+    <div class="watermark-control">
+        <label for="watermark-enabled">Activer le filigrane:</label>
+        <input type="checkbox" id="watermark-enabled">
+    </div>
+    <div class="watermark-upload">
+        <label for="watermarkUpload">Image du filigrane:</label>
+        <input type="file" id="watermarkUpload" accept="image/*">
+        <div id="current-watermark" class="current-watermark">
+            <img src="" alt="Current watermark" style="display: none;">
+            <span class="no-watermark">Aucune image</span>
+        </div>
+    </div>
+    <div class="watermark-control">
+        <label for="watermark-position">Position:</label>
+        <select id="watermark-position">
+            <option value="top-left">Haut Gauche</option>
+            <option value="top-right">Haut Droite</option>
+            <option value="bottom-left">Bas Gauche</option>
+            <option value="bottom-right">Bas Droite</option>
+        </select>
+    </div>
+    <div class="watermark-control">
+        <label for="watermark-size">Taille:</label>
+        <input type="range" id="watermark-size" min="20" max="200" value="100">
+        <span id="watermark-size-display">100px</span>
+    </div>
+    <div class="watermark-control">
+        <label for="watermark-opacity">Opacité:</label>
+        <input type="range" id="watermark-opacity" min="1" max="100" value="50">
+        <span id="watermark-opacity-display">50%</span>
+    </div>
+</div>
         <div class="button-container">
             <button id="save-global-settings">Sauvegarder</button>
             <button id="cancel-global-settings">Annuler</button>

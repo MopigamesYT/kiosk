@@ -487,3 +487,51 @@ input[type="range"]::-moz-range-thumb {
 .dark-theme input[type="range"]::-moz-range-thumb {
     background: #6abf6e;
 }
+
+.watermark-settings {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #ddd;
+}
+
+.watermark-control {
+    margin: 15px 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.watermark-control label {
+    min-width: 150px;
+}
+
+.watermark-upload {
+    margin: 15px 0;
+}
+
+.current-watermark {
+    margin-top: 10px;
+    padding: 10px;
+    border: 1px dashed #ccc;
+    border-radius: 4px;
+    text-align: center;
+}
+
+.current-watermark img {
+    max-width: 150px;
+    max-height: 100px;
+    object-fit: contain;
+}
+
+.no-watermark {
+    color: #666;
+    font-style: italic;
+}
+
+.dark-theme .watermark-settings {
+    border-top-color: #444;
+}
+
+.dark-theme .current-watermark {
+    border-color: #444;
+}
