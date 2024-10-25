@@ -1,3 +1,4 @@
 node_modules
 kiosk.json
 public/upload/*
+public/watermarks/*
