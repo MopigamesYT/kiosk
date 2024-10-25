@@ -519,7 +519,6 @@ saveGlobalSettingsButton.addEventListener('click', () => {
         .then(data => {
             if (data.success) {
                 globalSettingsModal.style.display = 'none';
-                alert('Paramètres globaux sauvegardés avec succès');
             } else {
                 alert('Erreur lors de la sauvegarde des paramètres globaux');
             }

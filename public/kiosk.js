@@ -1,230 +1,223 @@
-let slides = [];
-let currentSlideIndex = 0;
-let slideshowInterval;
-let isInitialLoad = true;
-let previousTheme = '';
-let globalSettings = {};
-let cursorVisible = false;
-let mouseActive = false;
-let defaultTitleSize = 48; 
-let defaultDescriptionSize = 24;
+// Constants and state management
+const DEFAULTS = {
+    TITLE_SIZE: 48,
+    DESCRIPTION_SIZE: 24,
+    SLIDE_CHECK_INTERVAL: 2000,
+    CURSOR_FADE_DELAY: 1000,
+    MOUSE_ACTIVATION_DELAY: 2000,
+    TRANSITION_DELAY: 1000
+};
 
-const cursor = document.createElement('div');
-const adminButton = document.getElementById('admin-button');
-adminButton.style.display = 'none';
-cursor.style.width = '10px';
-cursor.style.height = '10px';
-cursor.style.backgroundColor = '#fff';
-cursor.style.borderRadius = '50%';
-cursor.style.position = 'absolute';
-cursor.style.pointerEvents = 'none';
-cursor.style.zIndex = '9999';
-document.body.appendChild(cursor);
-
-let cursorTimeout;
-
-setTimeout(() => {
-    mouseActive = true; // Allow mouse movement registration after 2 seconds
-}, 2000);
-
-adminButton.addEventListener('click', () => {
-    window.location.href = '/admin';
-});
-
-document.addEventListener('mousemove', (event) => {
-    if (!mouseActive) return;
-
-    if (!cursorVisible) {
-        cursor.style.animation = 'fadeInUp 0.5s forwards';
-        adminButton.style.animation = 'fadeInUp 0.5s forwards'; // Apply fade-in animation to the admin button
+class KioskState {
+    constructor() {
+        this.slides = [];
+        this.currentSlideIndex = 0;
+        this.slideshowInterval = null;
+        this.isInitialLoad = true;
+        this.previousTheme = '';
+        this.globalSettings = {};
+        this.cursorVisible = false;
+        this.mouseActive = false;
+        this.cursorTimeout = null;
     }
-    cursorVisible = true;
-    cursor.style.left = `${event.clientX}px`;
-    cursor.style.top = `${event.clientY}px`;
-    cursor.style.opacity = '1';
+}
 
-    // Show the admin button if slides are present
-    const slidesElements = document.getElementById('slideshow').getElementsByClassName('slide');
+const state = new KioskState();
+
+// DOM Elements
+const elements = {
+    cursor: createCursor(),
+    adminButton: document.getElementById('admin-button'),
+    slideshow: document.getElementById('slideshow'),
+    loading: document.getElementById('loading'),
+    themeContainer: document.getElementById('theme-container')
+};
+
+// Initialize cursor
+function createCursor() {
+    const cursor = document.createElement('div');
+    Object.assign(cursor.style, {
+        width: '10px',
+        height: '10px',
+        backgroundColor: '#fff',
+        borderRadius: '50%',
+        position: 'absolute',
+        pointerEvents: 'none',
+        zIndex: '9999'
+    });
+    document.body.appendChild(cursor);
+    return cursor;
+}
+
+// Event Listeners
+function initializeEventListeners() {
+    elements.adminButton.style.display = 'none';
+    elements.adminButton.addEventListener('click', () => window.location.href = '/admin');
+    
+    document.addEventListener('mousemove', handleMouseMove);
+    
+    setTimeout(() => {
+        state.mouseActive = true;
+    }, DEFAULTS.MOUSE_ACTIVATION_DELAY);
+}
+
+function handleMouseMove(event) {
+    if (!state.mouseActive) return;
+
+    if (!state.cursorVisible) {
+        elements.cursor.style.animation = 'fadeInUp 0.5s forwards';
+        elements.adminButton.style.animation = 'fadeInUp 0.5s forwards';
+    }
+    
+    state.cursorVisible = true;
+    Object.assign(elements.cursor.style, {
+        left: `${event.clientX}px`,
+        top: `${event.clientY}px`,
+        opacity: '1'
+    });
+
+    const slidesElements = elements.slideshow.getElementsByClassName('slide');
     if (slidesElements.length > 0) {
-        adminButton.style.display = 'block'; // Show button only when slides are present and mouse moves
-        adminButton.style.opacity = '1';
+        elements.adminButton.style.display = 'block';
+        elements.adminButton.style.opacity = '1';
     }
 
-    clearTimeout(cursorTimeout);
-    cursorTimeout = setTimeout(() => {
-        cursor.style.animation = 'fadeOut 0.5s forwards';
-        adminButton.style.animation = 'fadeOut 0.5s forwards'; // Apply fade-out animation to the admin button
-        setTimeout(() => {
-            cursor.style.opacity = '0';
-            cursorVisible = false;
-            cursor.style.animation = 'none';
-            adminButton.style.display = 'none'; // Hide the admin button after fade-out animation
-        }, 500);
-    }, 1000);
-});
+    clearTimeout(state.cursorTimeout);
+    state.cursorTimeout = setTimeout(hideCursor, DEFAULTS.CURSOR_FADE_DELAY);
+}
 
+function hideCursor() {
+    elements.cursor.style.animation = 'fadeOut 0.5s forwards';
+    elements.adminButton.style.animation = 'fadeOut 0.5s forwards';
+    
+    setTimeout(() => {
+        elements.cursor.style.opacity = '0';
+        state.cursorVisible = false;
+        elements.cursor.style.animation = 'none';
+        elements.adminButton.style.display = 'none';
+    }, 500);
+}
 
+// Fullscreen handling
 function toggleFullScreen(element) {
     if (!document.fullscreenElement) {
-        element.requestFullscreen ? element.requestFullscreen() :
-        element.webkitRequestFullscreen ? element.webkitRequestFullscreen() :
-        element.msRequestFullscreen && element.msRequestFullscreen();
+        if (element.requestFullscreen) {
+            element.requestFullscreen();
+        } else if (element.webkitRequestFullscreen) {
+            element.webkitRequestFullscreen();
+        } else if (element.msRequestFullscreen) {
+            element.msRequestFullscreen();
+        }
     } else {
-        document.exitFullscreen ? document.exitFullscreen() :
-        document.webkitExitFullscreen ? document.webkitExitFullscreen() :
-        document.msExitFullscreen && document.msExitFullscreen();
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+        } else if (document.webkitExitFullscreen) {
+            document.webkitExitFullscreen();
+        } else if (document.msExitFullscreen) {
+            document.msExitFullscreen();
+        }
     }
 }
 
-function loadContent() {
-    if (isInitialLoad) {
+// Content Loading
+async function loadContent() {
+    if (state.isInitialLoad) {
         showLoading();
     }
-    const timestamp = new Date().getTime();
-    fetch(`kiosk.json?t=${timestamp}`)
-        .then(response => {
-            if (!response.ok) throw new Error('Network response was not ok');
-            return response.json();
-        })
-        .then(data => {
-            const oldFontSettings = {
-                titleFontSize: globalSettings.titleFontSize,
-                descriptionFontSize: globalSettings.descriptionFontSize
-            };
-            globalSettings = data.globalSettings || {};
-            if (oldFontSettings.titleFontSize !== globalSettings.titleFontSize ||
-                oldFontSettings.descriptionFontSize !== globalSettings.descriptionFontSize) {
-                updateSlides(data.slides || []);
-            }
-            defaultTitleSize = globalSettings.titleFontSize || 48;
-            defaultDescriptionSize = globalSettings.descriptionFontSize || 24;
-            updateTheme();
-            updateWatermark();
-            updateSlides(data.slides || []);
-            hideLoading();
-            isInitialLoad = false;
-        })
-        .catch(error => {
-            console.error('Error loading kiosk data:', error);
-            showNoSlidesMessage(error.message);
-            hideLoading();
-        });
+
+    try {
+        const response = await fetch(`kiosk.json?t=${Date.now()}`);
+        if (!response.ok) throw new Error('Network response was not ok');
+        
+        const data = await response.json();
+        handleContentUpdate(data);
+    } catch (error) {
+        console.error('Error loading kiosk data:', error);
+        showNoSlidesMessage(error.message);
+    } finally {
+        hideLoading();
+        state.isInitialLoad = false;
+    }
 }
 
+function handleContentUpdate(data) {
+    const oldFontSettings = {
+        titleFontSize: state.globalSettings.titleFontSize,
+        descriptionFontSize: state.globalSettings.descriptionFontSize
+    };
+
+    state.globalSettings = data.globalSettings || {};
+    
+    if (fontSettingsChanged(oldFontSettings)) {
+        updateSlides(data.slides || []);
+    }
+
+    DEFAULTS.TITLE_SIZE = state.globalSettings.titleFontSize || DEFAULTS.TITLE_SIZE;
+    DEFAULTS.DESCRIPTION_SIZE = state.globalSettings.descriptionFontSize || DEFAULTS.DESCRIPTION_SIZE;
+    
+    updateTheme();
+    updateWatermark();
+    updateSlides(data.slides || []);
+}
+
+// Loading state management
 function showLoading() {
-    document.getElementById('loading').style.display = 'flex';
+    elements.loading.style.display = 'flex';
 }
 
 function hideLoading() {
-    document.getElementById('loading').style.display = 'none';
+    elements.loading.style.display = 'none';
 }
 
-function updateSlides(data) {
-    const visibleSlides = data.filter(item => item.visibility !== false);
+function fontSettingsChanged(oldSettings) {
+    return oldSettings.titleFontSize !== state.globalSettings.titleFontSize ||
+           oldSettings.descriptionFontSize !== state.globalSettings.descriptionFontSize;
+}
 
-    if (visibleSlides.length === 0) {
-        showNoSlidesMessage('No visible slides available');
+// Theme Management
+function updateTheme() {
+    if (state.globalSettings.theme === state.previousTheme) {
         return;
     }
 
-    const newSlides = visibleSlides.map(item => ({
-        text: item.text,
-        description: item.description,
-        image: item.image,
-        accentColor: item.accentColor,
-        time: item.time || 8000
-    }));
+    state.previousTheme = state.globalSettings.theme;
+    elements.themeContainer.innerHTML = '';
 
-    // Update font sizes for existing slides even if content hasn't changed
-    const slideElements = document.getElementsByClassName('slide');
-    Array.from(slideElements).forEach(slideElement => {
-        const titleElement = slideElement.querySelector('.slide-title');
-        const descriptionElement = slideElement.querySelector('.slide-description');
-        
-        if (titleElement) {
-            titleElement.style.fontSize = `${globalSettings.titleFontSize || 48}px`;
-        }
-        if (descriptionElement) {
-            descriptionElement.style.fontSize = `${globalSettings.descriptionFontSize || 24}px`;
-        }
-    });
+    const themeTemplates = {
+        christmas: getChristmasTheme(),
+        summer: getSummerTheme(),
+        halloween: getHalloweenTheme(),
+        valentine: getValentineTheme(),
+        easter: getEasterTheme()
+    };
 
-    // Only rebuild slides if content has changed
-    if (JSON.stringify(newSlides) !== JSON.stringify(slides)) {
-        slides = newSlides;
-        rebuildSlideshow();
+    if (themeTemplates[state.globalSettings.theme]) {
+        elements.themeContainer.innerHTML = themeTemplates[state.globalSettings.theme];
     }
 }
 
-function updateWatermark() {
-    let watermark = document.getElementById('watermark');
-    if (!watermark) {
-        watermark = document.createElement('div');
-        watermark.id = 'watermark';
-        watermark.className = 'watermark';
-        document.body.appendChild(watermark);
-    }
-
-    if (globalSettings.watermark?.enabled && globalSettings.watermark.image) {
-        watermark.innerHTML = `<img src="${globalSettings.watermark.image}" alt="Watermark">`;
-        watermark.style.display = 'block';
-        
-        // Update position
-        watermark.className = `watermark ${globalSettings.watermark.position}`;
-        
-        // Update size and opacity
-        const img = watermark.querySelector('img');
-        if (img) {
-            img.style.width = `${globalSettings.watermark.size}px`;
-            img.style.opacity = globalSettings.watermark.opacity / 100;
-        }
-    } else {
-        watermark.style.display = 'none';
-    }
-}
-
-function updateTheme() {
-    if (globalSettings.theme === previousTheme) {
-        return; // Exit if the theme hasn't changed
-    }
-
-    previousTheme = globalSettings.theme; // Update the previous theme
-    const themeContainer = document.getElementById('theme-container');
-    themeContainer.innerHTML = '';
-
-    if (globalSettings.theme === 'christmas') {
-        themeContainer.innerHTML = `
+// Theme Templates
+function getChristmasTheme() {
+    return `
         <div class="snowflakescript">
             <style>
-                /* customizable snowflake styling */
                 .snowflake {
-                  color: #fff;
-                  font-size: 1em;
-                  font-family: Arial, sans-serif;
-                  text-shadow: 0 0 5px #000;
+                    color: #fff;
+                    font-size: 1em;
+                    font-family: Arial, sans-serif;
+                    text-shadow: 0 0 5px #000;
                 }
-                
-                @-webkit-keyframes snowflakes-fall{0%{top:-10%}100%{top:100%}}@-webkit-keyframes snowflakes-shake{0%,100%{-webkit-transform:translateX(0);transform:translateX(0)}50%{-webkit-transform:translateX(80px);transform:translateX(80px)}}@keyframes snowflakes-fall{0%{top:-10%}100%{top:100%}}@keyframes snowflakes-shake{0%,100%{transform:translateX(0)}50%{transform:translateX(80px)}}.snowflake{position:fixed;top:-10%;z-index:2;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none;cursor:default;-webkit-animation-name:snowflakes-fall,snowflakes-shake;-webkit-animation-duration:10s,3s;-webkit-animation-timing-function:linear,ease-in-out;-webkit-animation-iteration-count:infinite,infinite;-webkit-animation-play-state:running,running;animation-name:snowflakes-fall,snowflakes-shake;animation-duration:10s,3s;animation-timing-function:linear,ease-in-out;animation-iteration-count:infinite,infinite;animation-play-state:running,running}.snowflake:nth-of-type(0){left:1%;-webkit-animation-delay:0s,0s;animation-delay:0s,0s}.snowflake:nth-of-type(1){left:10%;-webkit-animation-delay:1s,1s;animation-delay:1s,1s}.snowflake:nth-of-type(2){left:20%;-webkit-animation-delay:6s,.5s;animation-delay:6s,.5s}.snowflake:nth-of-type(3){left:30%;-webkit-animation-delay:4s,2s;animation-delay:4s,2s}.snowflake:nth-of-type(4){left:40%;-webkit-animation-delay:2s,2s;animation-delay:2s,2s}.snowflake:nth-of-type(5){left:50%;-webkit-animation-delay:8s,3s;animation-delay:8s,3s}.snowflake:nth-of-type(6){left:60%;-webkit-animation-delay:6s,2s;animation-delay:6s,2s}.snowflake:nth-of-type(7){left:70%;-webkit-animation-delay:2.5s,1s;animation-delay:2.5s,1s}.snowflake:nth-of-type(8){left:80%;-webkit-animation-delay:1s,0s;animation-delay:1s,0s}.snowflake:nth-of-type(9){left:90%;-webkit-animation-delay:3s,1.5s;animation-delay:3s,1.5s}.snowflake:nth-of-type(10){left:25%;-webkit-animation-delay:2s,0s;animation-delay:2s,0s}.snowflake:nth-of-type(11){left:65%;-webkit-animation-delay:4s,2.5s;animation-delay:4s,2.5s}
+                @-webkit-keyframes snowflakes-fall{0%{top:-10%}100%{top:100%}}@-webkit-keyframes snowflakes-shake{0%,100%{-webkit-transform:translateX(0);transform:translateX(0)}50%{-webkit-transform:translateX(80px);transform:translateX(80px)}}@keyframes snowflakes-fall{0%{top:-10%}100%{top:100%}}@keyframes snowflakes-shake{0%,100%{transform:translateX(0)}50%{transform:translateX(80px)}}.snowflake{position:fixed;top:-10%;z-index:2;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none;cursor:default;-webkit-animation-name:snowflakes-fall,snowflakes-shake;-webkit-animation-duration:10s,3s;-webkit-animation-timing-function:linear,ease-in-out;-webkit-animation-iteration-count:infinite,infinite;-webkit-animation-play-state:running,running;animation-name:snowflakes-fall,snowflakes-shake;animation-duration:10s,3s;animation-timing-function:linear,ease-in-out;animation-iteration-count:infinite,infinite;animation-play-state:running,running}
             </style>
             <div class="snowflakes" aria-hidden="true">
-              <div class="snowflake">❅</div>
-              <div class="snowflake">❆</div>
-              <div class="snowflake">❅</div>
-              <div class="snowflake">❆</div>
-              <div class="snowflake">❅</div>
-              <div class="snowflake">❆</div>
-              <div class="snowflake">❅</div>
-              <div class="snowflake">❆</div>
-              <div class="snowflake">❅</div>
-              <div class="snowflake">❆</div>
-              <div class="snowflake">❅</div>
-              <div class="snowflake">❆</div>
+                ${Array.from({ length: 12 }, (_, i) => `<div class="snowflake" style="left: ${i * 8}%; animation-delay: ${i * 0.5}s,${i * 0.2}s">❅</div>`).join('')}
             </div>
         </div>
-        <div id="snow-patch"></div>
-        `;
-    } else if (globalSettings.theme === 'summer') {
-        themeContainer.innerHTML = `
+    `;
+}
+
+function getSummerTheme() {
+    return `
         <style>
             .ocean {
                 height: 100px;
@@ -236,17 +229,12 @@ function updateTheme() {
                 pointer-events: none;
             }
             .wave {
-                z-index: 1;
                 background: url(https://s3-us-west-2.amazonaws.com/s.cdpn.io/85486/wave.svg) repeat-x;
                 position: absolute;
                 width: 6400px;
                 height: 198px;
                 animation: wave 7s cubic-bezier(0.36, 0.45, 0.63, 0.53) infinite;
                 transform: translate3d(0, 0, 0);
-            }
-            .wave:nth-of-type(1) {
-                bottom: 0;
-                opacity: 0.7;
             }
             .wave:nth-of-type(2) {
                 bottom: 10px;
@@ -266,45 +254,36 @@ function updateTheme() {
             <div class="wave"></div>
             <div class="wave"></div>
         </div>
-        `;
-    } else if (globalSettings.theme === 'halloween') {
-        themeContainer.innerHTML = `
+    `;
+}
+
+function getHalloweenTheme() {
+    return `
         <div class="snowflakescript">
             <style>
                 .snowflake {
-                  color: #fff;
-                  font-size: 2em;
-                  font-family: Arial, sans-serif;
-                  text-shadow: 0 0 5px #000;
+                    color: #fff;
+                    font-size: 2em;
+                    font-family: Arial, sans-serif;
+                    text-shadow: 0 0 5px #000;
                 }
-                
-                @-webkit-keyframes snowflakes-fall{0%{top:-10%}100%{top:100%}}@-webkit-keyframes snowflakes-shake{0%,100%{-webkit-transform:translateX(0);transform:translateX(0)}50%{-webkit-transform:translateX(80px);transform:translateX(80px)}}@keyframes snowflakes-fall{0%{top:-10%}100%{top:100%}}@keyframes snowflakes-shake{0%,100%{transform:translateX(0)}50%{transform:translateX(80px)}}.snowflake{position:fixed;top:-10%;z-index:9999;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none;cursor:default;-webkit-animation-name:snowflakes-fall,snowflakes-shake;-webkit-animation-duration:10s,3s;-webkit-animation-timing-function:linear,ease-in-out;-webkit-animation-iteration-count:infinite,infinite;-webkit-animation-play-state:running,running;animation-name:snowflakes-fall,snowflakes-shake;animation-duration:10s,3s;animation-timing-function:linear,ease-in-out;animation-iteration-count:infinite,infinite;animation-play-state:running,running}.snowflake:nth-of-type(0){left:1%;-webkit-animation-delay:0s,0s;animation-delay:0s,0s}.snowflake:nth-of-type(1){left:10%;-webkit-animation-delay:1s,1s;animation-delay:1s,1s}.snowflake:nth-of-type(2){left:20%;-webkit-animation-delay:6s,.5s;animation-delay:6s,.5s}.snowflake:nth-of-type(3){left:30%;-webkit-animation-delay:4s,2s;animation-delay:4s,2s}.snowflake:nth-of-type(4){left:40%;-webkit-animation-delay:2s,2s;animation-delay:2s,2s}.snowflake:nth-of-type(5){left:50%;-webkit-animation-delay:8s,3s;animation-delay:8s,3s}.snowflake:nth-of-type(6){left:60%;-webkit-animation-delay:6s,2s;animation-delay:6s,2s}.snowflake:nth-of-type(7){left:70%;-webkit-animation-delay:2.5s,1s;animation-delay:2.5s,1s}.snowflake:nth-of-type(8){left:80%;-webkit-animation-delay:1s,0s;animation-delay:1s,0s}.snowflake:nth-of-type(9){left:90%;-webkit-animation-delay:3s,1.5s;animation-delay:3s,1.5s}.snowflake:nth-of-type(10){left:25%;-webkit-animation-delay:2s,0s;animation-delay:2s,0s}.snowflake:nth-of-type(11){left:65%;-webkit-animation-delay:4s,2.5s;animation-delay:4s,2.5s}
+                @-webkit-keyframes snowflakes-fall{0%{top:-10%}100%{top:100%}}@-webkit-keyframes snowflakes-shake{0%,100%{-webkit-transform:translateX(0);transform:translateX(0)}50%{-webkit-transform:translateX(80px);transform:translateX(80px)}}@keyframes snowflakes-fall{0%{top:-10%}100%{top:100%}}@keyframes snowflakes-shake{0%,100%{transform:translateX(0)}50%{transform:translateX(80px)}}.snowflake{position:fixed;top:-10%;z-index:9999;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none;cursor:default;-webkit-animation-name:snowflakes-fall,snowflakes-shake;-webkit-animation-duration:10s,3s;-webkit-animation-timing-function:linear,ease-in-out;-webkit-animation-iteration-count:infinite,infinite;-webkit-animation-play-state:running,running;animation-name:snowflakes-fall,snowflakes-shake;animation-duration:10s,3s;animation-timing-function:linear,ease-in-out;animation-iteration-count:infinite,infinite;animation-play-state:running,running}
             </style>
             <div class="snowflakes" aria-hidden="true">
-              <div class="snowflake">🎃</div>
-              <div class="snowflake">🍂</div>
-              <div class="snowflake">🎃</div>
-              <div class="snowflake">🍁</div>
-              <div class="snowflake">🎃</div>
-              <div class="snowflake">🍂</div>
-              <div class="snowflake">🎃</div>
-              <div class="snowflake">🍁</div>
-              <div class="snowflake">🎃</div>
-              <div class="snowflake">🍂</div>
-              <div class="snowflake">🎃</div>
-              <div class="snowflake">🍁</div>
+                ${Array.from({ length: 12 }, (_, i) => `<div class="snowflake" style="left: ${i * 8}%; animation-delay: ${i * 0.5}s,${i * 0.2}s">${i % 2 ? '🎃' : '🍂'}</div>`).join('')}
             </div>
         </div>
-        `;
-    } else if (globalSettings.theme === 'valentine') {
-        themeContainer.innerHTML = `
+    `;
+}
+
+function getValentineTheme() {
+    return `
         <style>
             @keyframes float {
                 0% { transform: translateY(0px) rotate(0deg); }
                 50% { transform: translateY(-20px) rotate(10deg); }
                 100% { transform: translateY(0px) rotate(0deg); }
             }
-            
             .heart {
                 position: fixed;
                 color: #ff69b4;
@@ -313,92 +292,148 @@ function updateTheme() {
                 z-index: 1;
                 animation: float 4s ease-in-out infinite;
             }
-            
-            .heart:nth-child(2n) {
-                animation-delay: -2s;
-                color: #ff1493;
-            }
         </style>
-        ${Array.from({length: 12}, (_, i) => `
+        ${Array.from({ length: 12 }, (_, i) => `
             <div class="heart" style="
                 left: ${Math.random() * 100}vw;
                 top: ${Math.random() * 100}vh;
                 animation-duration: ${3 + Math.random() * 2}s;
+                color: ${i % 2 ? '#ff69b4' : '#ff1493'};
             ">❤️</div>
         `).join('')}
-        `;
-    } else if (globalSettings.theme === 'easter') {
-        themeContainer.innerHTML = `
+    `;
+}
+
+function getEasterTheme() {
+    return `
         <style>
             @keyframes bounce {
                 0%, 100% { transform: translateY(0) rotate(0deg); }
                 50% { transform: translateY(-20px) rotate(10deg); }
             }
-            
-            .easter-egg {
+            .easter-egg, .easter-bunny {
                 position: fixed;
-                font-size: 2em;
                 z-index: 1;
                 animation: bounce 3s ease-in-out infinite;
             }
-            
-            .easter-bunny {
-                position: fixed;
-                font-size: 3em;
-                z-index: 1;
-                animation: bounce 4s ease-in-out infinite;
-            }
+            .easter-egg { font-size: 2em; }
+            .easter-bunny { font-size: 3em; }
         </style>
-        ${Array.from({length: 8}, (_, i) => `
+        ${Array.from({ length: 8 }, (_, i) => `
             <div class="easter-egg" style="
                 left: ${Math.random() * 100}vw;
                 top: ${Math.random() * 100}vh;
                 animation-delay: ${Math.random() * 2}s;
             ">🥚</div>
         `).join('')}
-        ${Array.from({length: 3}, (_, i) => `
+        ${Array.from({ length: 3 }, (_, i) => `
             <div class="easter-bunny" style="
                 left: ${Math.random() * 100}vw;
                 top: ${Math.random() * 100}vh;
                 animation-delay: ${Math.random() * 2}s;
             ">🐰</div>
         `).join('')}
-        `;
+    `;
+}
+
+// Watermark Management
+function updateWatermark() {
+    let watermark = document.getElementById('watermark');
+    if (!watermark) {
+        watermark = document.createElement('div');
+        watermark.id = 'watermark';
+        watermark.className = 'watermark';
+        document.body.appendChild(watermark);
+    }
+
+    const watermarkSettings = state.globalSettings.watermark;
+    if (watermarkSettings?.enabled && watermarkSettings.image) {
+        watermark.innerHTML = `<img src="${watermarkSettings.image}" alt="Watermark">`;
+        watermark.style.display = 'block';
+        watermark.className = `watermark ${watermarkSettings.position}`;
+        
+        const img = watermark.querySelector('img');
+        if (img) {
+            img.style.width = `${watermarkSettings.size}px`;
+            img.style.opacity = watermarkSettings.opacity / 100;
+        }
+    } else {
+        watermark.style.display = 'none';
+    }
+}
+
+// Slideshow Management
+function updateSlides(data) {
+    const visibleSlides = data.filter(item => item.visibility !== false);
+
+    if (visibleSlides.length === 0) {
+        showNoSlidesMessage('No visible slides available');
+        return;
+    }
+
+    const newSlides = visibleSlides.map(formatSlideData);
+    updateFontSizes();
+
+    if (JSON.stringify(newSlides) !== JSON.stringify(state.slides)) {
+        state.slides = newSlides;
+        rebuildSlideshow();
+    }
+}
+
+function formatSlideData(item) {
+    return {
+        text: item.text,
+        description: item.description,
+        image: item.image,
+        accentColor: item.accentColor,
+        time: item.time || 8000
+    };
+}
+
+function updateFontSizes() {
+    const slideElements = document.getElementsByClassName('slide');
+    Array.from(slideElements).forEach(updateSlideFontSizes);
+}
+
+function updateSlideFontSizes(slideElement) {
+    const titleElement = slideElement.querySelector('.slide-title');
+    const descriptionElement = slideElement.querySelector('.slide-description');
+    
+    if (titleElement) {
+        titleElement.style.fontSize = `${state.globalSettings.titleFontSize || DEFAULTS.TITLE_SIZE}px`;
+    }
+    if (descriptionElement) {
+        descriptionElement.style.fontSize = `${state.globalSettings.descriptionFontSize || DEFAULTS.DESCRIPTION_SIZE}px`;
     }
 }
 
 function rebuildSlideshow() {
-    const slideshow = document.getElementById('slideshow');
-    slideshow.innerHTML = '';
-    slides.forEach((slide, index) => {
-        slideshow.appendChild(createSlideElement(slide, index));
+    elements.slideshow.innerHTML = '';
+    state.slides.forEach((slide, index) => {
+        elements.slideshow.appendChild(createSlideElement(slide, index));
     });
-    currentSlideIndex = 0;
+    state.currentSlideIndex = 0;
     startSlideshow();
 }
 
 function createSlideElement(slide, index) {
     const slideElement = document.createElement('div');
     slideElement.className = 'slide';
-    slideElement.style.opacity = index === currentSlideIndex ? '1' : '0';
+    slideElement.style.opacity = index === state.currentSlideIndex ? '1' : '0';
     slideElement.dataset.accentColor = slide.accentColor;
 
-    // Apply font sizes from global settings
-    let content = `<h2 class="slide-title" style="font-size: ${defaultTitleSize}px">${slide.text}</h2>`;
-    if (slide.description) {
-        content += `<p class="slide-description" style="font-size: ${defaultDescriptionSize}px">${slide.description}</p>`;
-    }
-    if (slide.image) {
-        content += `<img class="slide-image" src="${slide.image}" alt="${slide.text}">`;
-    }
+    const content = [
+        `<h2 class="slide-title" style="font-size: ${DEFAULTS.TITLE_SIZE}px">${slide.text}</h2>`,
+        slide.description ? `<p class="slide-description" style="font-size: ${DEFAULTS.DESCRIPTION_SIZE}px">${slide.description}</p>` : '',
+        slide.image ? `<img class="slide-image" src="${slide.image}" alt="${slide.text}">` : ''
+    ].join('');
 
     slideElement.innerHTML = content;
     return slideElement;
 }
 
 function showNoSlidesMessage(errorMessage) {
-    const slideshow = document.getElementById('slideshow');
-    slideshow.innerHTML = `
+    elements.slideshow.innerHTML = `
         <div class="no-slides-message">
             <h1>No slides available</h1>
             <p>Error: ${errorMessage}</p>
@@ -411,47 +446,71 @@ function goToAdminPanel() {
     window.location.href = '/admin';
 }
 
+// Slide Navigation
 function showSlide(index) {
-    const slideshow = document.getElementById('slideshow');
-    const slidesElements = slideshow.getElementsByClassName('slide');
-    const currentSlide = slidesElements[currentSlideIndex];
+    const slidesElements = elements.slideshow.getElementsByClassName('slide');
+    const currentSlide = slidesElements[state.currentSlideIndex];
     const nextSlide = slidesElements[index];
 
     currentSlide.style.opacity = '0';
 
     setTimeout(() => {
-        for (let i = 0; i < slidesElements.length; i++) {
-            slidesElements[i].style.display = 'none';
-        }
-
+        Array.from(slidesElements).forEach(slide => slide.style.display = 'none');
+        
         nextSlide.style.display = 'flex';
         nextSlide.style.opacity = '0';
-        setTimeout(() => {
-            nextSlide.style.opacity = '1';
-            slideshow.style.backgroundColor = nextSlide.dataset.accentColor;
-        }, 50);
         
-        currentSlideIndex = index;
-
-        // Show the admin button when a slide is visible
-    }, 1000);
+        requestAnimationFrame(() => {
+            nextSlide.style.opacity = '1';
+            elements.slideshow.style.backgroundColor = nextSlide.dataset.accentColor;
+        });
+        
+        state.currentSlideIndex = index;
+    }, DEFAULTS.TRANSITION_DELAY);
 }
 
 function startSlideshow() {
-    clearInterval(slideshowInterval);
+    clearInterval(state.slideshowInterval);
 
-    function nextSlide() {
-        const nextIndex = (currentSlideIndex + 1) % slides.length;
+    const nextSlide = () => {
+        const nextIndex = (state.currentSlideIndex + 1) % state.slides.length;
         showSlide(nextIndex);
-    }
+    };
 
-    showSlide(currentSlideIndex);
-    slideshowInterval = setInterval(nextSlide, slides[currentSlideIndex].time);
+    showSlide(state.currentSlideIndex);
+    state.slideshowInterval = setInterval(nextSlide, state.slides[state.currentSlideIndex].time);
 }
 
-function init() {   
+// CSS Animations
+const styleSheet = document.createElement('style');
+styleSheet.textContent = `
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes fadeOut {
+        from {
+            opacity: 1;
+        }
+        to {
+            opacity: 0;
+        }
+    }
+`;
+document.head.appendChild(styleSheet);
+
+// Initialization
+function init() {
+    initializeEventListeners();
     loadContent();
-    setInterval(loadContent, 2000);
+    setInterval(loadContent, DEFAULTS.SLIDE_CHECK_INTERVAL);
 }
 
 window.onload = init;
