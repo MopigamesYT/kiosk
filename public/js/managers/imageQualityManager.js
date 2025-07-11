@@ -57,8 +57,15 @@ export class ImageQualityManager {
                 ctx.drawImage(img, 0, 0);
             }
 
-            // Convert to compressed data URL
-            const compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
+            // Convert to compressed data URL - use PNG for transparency, JPEG for photos
+            let compressedDataUrl;
+            if (this.hasTransparency(ctx, canvas.width, canvas.height)) {
+                // Use PNG for images with transparency
+                compressedDataUrl = canvas.toDataURL('image/png');
+            } else {
+                // Use JPEG for opaque images (better compression)
+                compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
+            }
             
             // Cache the result
             this.processedImages.set(cacheKey, compressedDataUrl);
@@ -67,6 +74,26 @@ export class ImageQualityManager {
         } catch (error) {
             console.warn('Failed to create low quality version:', error);
             return originalUrl; // Fallback to original
+        }
+    }
+
+    // Check if canvas has any transparent pixels
+    hasTransparency(ctx, width, height) {
+        try {
+            const imageData = ctx.getImageData(0, 0, width, height);
+            const data = imageData.data;
+            
+            // Check alpha channel (every 4th value) for any non-255 values
+            for (let i = 3; i < data.length; i += 4) {
+                if (data[i] < 255) {
+                    return true; // Found transparency
+                }
+            }
+            return false; // No transparency found
+        } catch (error) {
+            // If we can't read image data (CORS issues), assume no transparency
+            console.warn('Could not check transparency, assuming opaque:', error);
+            return false;
         }
     }
     // Get appropriate image URL based on performance state
