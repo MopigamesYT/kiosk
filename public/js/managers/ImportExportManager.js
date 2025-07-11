@@ -3,6 +3,7 @@
  */
 
 import { UIHelpers } from '../helpers/UIHelpers.js';
+import { getAvailableThemes, isValidTheme } from '../constants/themeConstants.js';
 
 export class ImportExportManager {
   constructor(kioskManager, settingsManager) {
@@ -221,8 +222,8 @@ export class ImportExportManager {
     const errors = [];
     const warnings = [];
 
-    // Theme validation
-    const validThemes = ['default', 'christmas', 'summer', 'halloween', 'valentine', 'easter'];
+    // Theme validation - use dynamic theme list
+    const validThemes = getAvailableThemes();
     if (settings.theme && !validThemes.includes(settings.theme)) {
       warnings.push(`Unknown theme: ${settings.theme}`);
     }

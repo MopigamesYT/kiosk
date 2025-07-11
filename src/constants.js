@@ -2,6 +2,8 @@
  * Application constants
  */
 
+const themeService = require('./services/ThemeService');
+
 module.exports = {
   // File paths
   KIOSK_JSON_PATH: 'kiosk.json',
@@ -27,9 +29,14 @@ module.exports = {
   MIN_WATERMARK_OPACITY: 1,
   MAX_WATERMARK_OPACITY: 100,
   
-  // Supported themes
-  SUPPORTED_THEMES: ['default', 'christmas', 'summer', 'halloween', 'valentine', 'easter'],
+  // Dynamic supported themes
+  get SUPPORTED_THEMES() {
+    return themeService.getAvailableThemes();
+  },
   
   // Watermark positions
-  WATERMARK_POSITIONS: ['top-left', 'top-right', 'bottom-left', 'bottom-right']
+  WATERMARK_POSITIONS: ['top-left', 'top-right', 'bottom-left', 'bottom-right'],
+  
+  // Theme service
+  themeService
 };

@@ -3,10 +3,12 @@
  */
 
 import { UIHelpers } from '../helpers/UIHelpers.js';
+import { getThemeRegistry } from '../constants/themeConstants.js';
 
 export class SettingsManager {
   constructor() {
     this.initializeElements();
+    this.populateThemeOptions();
     this.attachEventListeners();
     this.loadSettings();
   }
@@ -43,6 +45,35 @@ export class SettingsManager {
       currentWatermarkImg: document.querySelector('#current-watermark img'),
       noWatermarkText: document.querySelector('.no-watermark')
     };
+  }
+
+  /**
+   * Dynamically populate theme options from themes.js
+   */
+  populateThemeOptions() {
+    try {
+      if (this.elements.kioskThemeSelect) {
+        const themeRegistry = getThemeRegistry();
+        
+        // Clear existing options
+        this.elements.kioskThemeSelect.innerHTML = '';
+        
+        // Add theme options
+        Object.keys(themeRegistry).forEach(themeId => {
+          const option = document.createElement('option');
+          option.value = themeId;
+          option.textContent = themeRegistry[themeId].name;
+          this.elements.kioskThemeSelect.appendChild(option);
+        });
+      }
+    } catch (error) {
+      console.error('Failed to populate theme options:', error);
+      
+      // Fallback: add just the default theme
+      if (this.elements.kioskThemeSelect) {
+        this.elements.kioskThemeSelect.innerHTML = '<option value="default">Par défaut</option>';
+      }
+    }
   }
 
   /**
