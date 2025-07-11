@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Performance Demo - Kiosk Slideshow</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background: #f0f0f0;
+        }
+        
+        .demo-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .demo-title {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .demo-section {
+            margin-bottom: 30px;
+            padding: 15px;
+            border-left: 4px solid #007acc;
+            background: #f8f9fa;
+        }
+        
+        .demo-button {
+            background: #007acc;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+        }
+        
+        .demo-button:hover {
+            background: #005a9e;
+        }
+        
+        .performance-stats {
+            background: #2d3748;
+            color: white;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            margin-top: 10px;
+            white-space: pre-line;
+        }
+        
+        .image-demo {
+            display: flex;
+            gap: 20px;
+            margin-top: 15px;
+        }
+        
+        .image-demo img {
+            max-width: 200px;
+            max-height: 150px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+        }
+        
+        .quality-indicator {
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        
+        .quality-high { background: #48bb78; color: white; }
+        .quality-medium { background: #ed8936; color: white; }
+        .quality-low { background: #f56565; color: white; }
+        
+        .fps-display {
+            background: #1a202c;
+            color: #00ff00;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 16px;
+            text-align: center;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <h1 class="demo-title">🚀 Kiosk Performance Monitoring Demo</h1>
+        
+        <div class="demo-section">
+            <h3>📊 Performance Monitor</h3>
+            <p>Real-time FPS monitoring and stutter detection for optimal slideshow performance.</p>
+            <div class="fps-display" id="fps-display">FPS: -- | Level: --</div>
+            <button class="demo-button" onclick="startPerformanceTest()">Start Monitoring</button>
+            <button class="demo-button" onclick="simulateStutter()">Simulate Stutter</button>
+            <button class="demo-button" onclick="simulateHeavyLoad()">Heavy CPU Load</button>
+            <button class="demo-button" onclick="stopPerformanceTest()">Stop Monitoring</button>
+            <div id="performance-log" class="performance-stats"></div>
+        </div>
+        
+        <div class="demo-section">
+            <h3>🖼️ Adaptive Image Quality</h3>
+            <p>Automatically optimizes image quality based on device performance.</p>
+            <div>
+                Current Performance Level: 
+                <span id="quality-level" class="quality-indicator quality-high">HIGH</span>
+            </div>
+            <button class="demo-button" onclick="testImageOptimization()">Test Image Optimization</button>
+            <button class="demo-button" onclick="clearImageCache()">Clear Cache</button>
+            <div class="image-demo" id="image-demo">
+                <!-- Images will be loaded here -->
+            </div>
+            <div id="image-stats" class="performance-stats"></div>
+        </div>
+        
+        <div class="demo-section">
+            <h3>🎯 Integration Test</h3>
+            <p>Full integration test with slideshow simulation.</p>
+            <button class="demo-button" onclick="runFullTest()">Run Full Test</button>
+            <button class="demo-button" onclick="openKioskDemo()">Open Kiosk Demo</button>
+            <div id="integration-log" class="performance-stats"></div>
+        </div>
+    </div>
+
+    <!-- Load performance modules -->
+    <script src="js/performance/performanceMonitor.js"></script>
+    <script src="js/performance/imageQualityManager.js"></script>
+
+    <script>
+        let performanceMonitor = null;
+        let imageQualityManager = null;
+        let testInterval = null;
+        
+        // Sample test images (you can replace with your own)
+        const testImages = [
+            'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAwIiBoZWlnaHQ9IjYwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxOCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPjgwMCB4IDYwMCBUZXN0IEltYWdlPC90ZXh0Pjwvc3ZnPg==',
+            'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIwMCIgaGVpZ2h0PSI4MDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0iIzMzNyIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMjQiIGZpbGw9IiNhYWEiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj4xMjAwIHggODAwIExhcmdlIEltYWdlPC90ZXh0Pjwvc3ZnPg=='
+        ];
+        
+        function initializeManagers() {
+            if (!performanceMonitor) {
+                performanceMonitor = new PerformanceMonitor({
+                    targetFPS: 30,
+                    minFPS: 20,
+                    sampleSize: 30
+                });
+                
+                performanceMonitor.on('stutter', (data) => {
+                    logPerformance(`⚡ STUTTER: ${data.fps}FPS (${data.severity})`);
+                    updateQualityLevel(data.severity === 'critical' ? 'low' : 'medium');
+                });
+                
+                performanceMonitor.on('smooth', (data) => {
+                    logPerformance(`✅ SMOOTH: ${data.fps}FPS`);
+                });
+                
+                performanceMonitor.on('fpsChange', (data) => {
+                    updateFPSDisplay(data.current, performanceMonitor.getPerformanceLevel());
+                });
+            }
+            
+            if (!imageQualityManager) {
+                imageQualityManager = new ImageQualityManager({
+                    maxFileSize: 200 * 1024,
+                    maxDimension: 1024,
+                    minDimension: 480
+                });
+            }
+        }
+        
+        function startPerformanceTest() {
+            initializeManagers();
+            performanceMonitor.start();
+            logPerformance('🔍 Performance monitoring started');
+        }
+        
+        function stopPerformanceTest() {
+            if (performanceMonitor) {
+                performanceMonitor.stop();
+                logPerformance('⏹️ Performance monitoring stopped');
+            }
+            if (testInterval) {
+                clearInterval(testInterval);
+                testInterval = null;
+            }
+        }
+        
+        function simulateStutter() {
+            logPerformance('🎭 Simulating stutter...');
+            // Block main thread for a short time to simulate stutter
+            const start = performance.now();
+            while (performance.now() - start < 200) {
+                // Busy wait to simulate heavy computation
+            }
+        }
+        
+        function simulateHeavyLoad() {
+            logPerformance('🔥 Simulating heavy CPU load...');
+            let iterations = 0;
+            const heavyComputation = () => {
+                const start = performance.now();
+                while (performance.now() - start < 50) {
+                    Math.random() * Math.random(); // Waste CPU cycles
+                }
+                iterations++;
+                if (iterations < 20) {
+                    setTimeout(heavyComputation, 10);
+                }
+            };
+            heavyComputation();
+        }
+        
+        function testImageOptimization() {
+            if (!imageQualityManager) {
+                initializeManagers();
+            }
+            
+            logImage('🖼️ Testing image optimization...');
+            const imageDemo = document.getElementById('image-demo');
+            imageDemo.innerHTML = '';
+            
+            testImages.forEach(async (src, index) => {
+                try {
+                    const optimizedSrc = await imageQualityManager.getOptimalImageSrc(src);
+                    
+                    const container = document.createElement('div');
+                    container.innerHTML = `
+                        <p>Image ${index + 1}</p>
+                        <img src="${optimizedSrc}" alt="Test image ${index + 1}">
+                        <p style="font-size: 10px;">Optimized: ${optimizedSrc === src ? 'No' : 'Yes'}</p>
+                    `;
+                    imageDemo.appendChild(container);
+                    
+                    logImage(`✅ Image ${index + 1} processed`);
+                } catch (error) {
+                    logImage(`❌ Image ${index + 1} failed: ${error.message}`);
+                }
+            });
+        }
+        
+        function clearImageCache() {
+            if (imageQualityManager) {
+                imageQualityManager.clearCache();
+                logImage('🗑️ Image cache cleared');
+            }
+        }
+        
+        function updateQualityLevel(level) {
+            const indicator = document.getElementById('quality-level');
+            indicator.textContent = level.toUpperCase();
+            indicator.className = `quality-indicator quality-${level}`;
+            
+            if (imageQualityManager) {
+                imageQualityManager.setPerformanceLevel(level);
+            }
+        }
+        
+        function updateFPSDisplay(fps, level) {
+            const display = document.getElementById('fps-display');
+            display.textContent = `FPS: ${fps} | Level: ${level.toUpperCase()}`;
+            
+            // Color code based on FPS
+            if (fps >= 25) {
+                display.style.color = '#00ff00';
+            } else if (fps >= 15) {
+                display.style.color = '#ffaa00';
+            } else {
+                display.style.color = '#ff0000';
+            }
+        }
+        
+        function logPerformance(message) {
+            const log = document.getElementById('performance-log');
+            const timestamp = new Date().toLocaleTimeString();
+            log.textContent += `[${timestamp}] ${message}\n`;
+            log.scrollTop = log.scrollHeight;
+        }
+        
+        function logImage(message) {
+            const log = document.getElementById('image-stats');
+            const timestamp = new Date().toLocaleTimeString();
+            log.textContent += `[${timestamp}] ${message}\n`;
+            log.scrollTop = log.scrollHeight;
+        }
+        
+        function logIntegration(message) {
+            const log = document.getElementById('integration-log');
+            const timestamp = new Date().toLocaleTimeString();
+            log.textContent += `[${timestamp}] ${message}\n`;
+            log.scrollTop = log.scrollHeight;
+        }
+        
+        function runFullTest() {
+            logIntegration('🚀 Running full integration test...');
+            
+            initializeManagers();
+            performanceMonitor.start();
+            
+            // Simulate a complete workflow
+            setTimeout(() => {
+                logIntegration('📸 Testing image preloading...');
+                testImageOptimization();
+            }, 1000);
+            
+            setTimeout(() => {
+                logIntegration('⚡ Testing performance under load...');
+                simulateHeavyLoad();
+            }, 3000);
+            
+            setTimeout(() => {
+                logIntegration('🎯 Testing adaptive quality...');
+                simulateStutter();
+            }, 5000);
+            
+            setTimeout(() => {
+                logIntegration('✅ Integration test completed');
+                if (performanceMonitor) {
+                    performanceMonitor.logStats();
+                }
+                if (imageQualityManager) {
+                    imageQualityManager.logStats();
+                }
+            }, 7000);
+        }
+        
+        function openKioskDemo() {
+            window.open('kiosk.html', '_blank');
+        }
+        
+        // Initialize on page load
+        window.addEventListener('load', () => {
+            logPerformance('Demo page loaded - Ready for testing!');
+            logImage('Image optimization ready');
+            logIntegration('Integration testing ready');
+        });
+    </script>
+</body>
+</html>
