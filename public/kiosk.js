@@ -1,3 +1,30 @@
+// Import performance and image quality modules
+import { PerformanceMonitor } from './js/performance/performanceMonitor.js';
+import { ImageQualityManager } from './js/managers/imageQualityManager.js';
+
+// Top-level instances
+let perfMonitor, imgQualityManager;
+// Generate simple image variants: original and a lower-resolution fallback
+function generateVariants(url) {
+    // No longer needed - we'll generate compressed versions dynamically
+    return url;
+}
+// Update image sources based on performance state
+async function updateImageQuality(isLow) {
+    const imgs = elements.slideshow.getElementsByClassName('slide-image');
+    const promises = Array.from(imgs).map(async (img) => {
+        if (!img._originalUrl) {
+            img._originalUrl = img.src; // Store original URL
+        }
+        
+        const newSrc = await imgQualityManager.getImageUrl(img._originalUrl, isLow);
+        if (img.src !== newSrc) {
+            img.src = newSrc;
+        }
+    });
+    
+    await Promise.all(promises);
+}
 // Constants and state management
 const DEFAULTS = {
     TITLE_SIZE: 48,
@@ -334,6 +361,11 @@ function createSlideElement(slide, index) {
     ].join('');
 
     slideElement.innerHTML = content;
+    // Store original URL for quality management
+    const imgEl = slideElement.querySelector('.slide-image');
+    if (imgEl) {
+        imgEl._originalUrl = slide.image;
+    }
     return slideElement;
 }
 
@@ -442,6 +474,19 @@ function init() {
     elements.loading = document.getElementById('loading');
     elements.themeContainer = document.getElementById('theme-container');
     
+    // Initialize performance and image quality modules
+    perfMonitor = new PerformanceMonitor();
+    imgQualityManager = new ImageQualityManager();
+    perfMonitor.start();
+    perfMonitor.onLowFPS(fps => {
+        console.warn('Low FPS detected:', fps);
+        updateImageQuality(true);
+    });
+    perfMonitor.onHighFPS(fps => {
+        console.info('High FPS restored:', fps);
+        updateImageQuality(false);
+    });
+    
     const themeScript = document.createElement('script');
     themeScript.src = 'themes.js';
     
@@ -465,3 +510,6 @@ function init() {
 }
 
 window.onload = init;
+// Expose functions for inline handlers
+window.toggleFullScreen = toggleFullScreen;
+window.goToAdminPanel = goToAdminPanel;
