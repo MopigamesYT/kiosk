@@ -1,15 +1,21 @@
 const express = require('express');
-const fs = require('fs');
+const fs = require('fs').promises;
 const path = require('path');
 const multer = require('multer');
 const { v4: uuidv4 } = require('uuid');
+const atomic = require('write-file-atomic');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-if (!fs.existsSync('public/upload')) {
-  fs.mkdirSync('public/upload');
-}
+// Ensure the upload directory exists
+(async () => {
+  try {
+    await fs.mkdir('public/upload', { recursive: true });
+  } catch (error) {
+    console.error('Error creating upload directory:', error);
+  }
+})();
 
 app.use(express.json());
 app.use(express.static('public'));
@@ -27,74 +33,134 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
-function readKioskData() {
+// A simple promise queue to serialize writes to the kiosk.json file
+let writeQueue = Promise.resolve();
+
+async function readKioskData() {
   const filePath = path.join(__dirname, 'kiosk.json');
-  if (!fs.existsSync(filePath)) {
-    const initialData = {
-      globalSettings: { theme: "default" },
-      slides: []
-    };
-    fs.writeFileSync(filePath, JSON.stringify(initialData, null, 2));
+  try {
+    const data = await fs.readFile(filePath, 'utf8');
+    return JSON.parse(data);
+  } catch (error) {
+    if (error.code === 'ENOENT') {
+      const initialData = {
+        globalSettings: { theme: "default" },
+        slides: []
+      };
+      await writeKioskData(initialData);
+      return initialData;
+    }
+    throw error;
   }
-  return JSON.parse(fs.readFileSync(filePath, 'utf8'));
 }
 
 function writeKioskData(data) {
   const filePath = path.join(__dirname, 'kiosk.json');
-  fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
+  const stringifiedData = JSON.stringify(data, null, 2);
+
+  // Basic validation before writing
+  try {
+    JSON.parse(stringifiedData);
+  } catch (e) {
+    console.error("Error: Invalid JSON data before writing.", e);
+    return Promise.reject(new Error("Invalid JSON data provided to writeKioskData"));
+  }
+
+  const writePromise = async () => {
+    try {
+      await atomic(filePath, stringifiedData);
+    } catch (error) {
+      console.error('Failed to write kiosk data atomically:', error);
+      throw error;
+    }
+  };
+
+  // Chain the new write operation to the queue
+  writeQueue = writeQueue.then(writePromise, writePromise);
+  return writeQueue;
 }
 
 function reorganizeIds(data) {
   return data.map((item, index) => ({ ...item, id: index + 1 }));
 }
 
-app.get('/kiosk', (req, res) => {
-  const kioskData = readKioskData();
-  res.json(kioskData.slides);
-});
-
-app.get('/global-settings', (req, res) => {
-  const kioskData = readKioskData();
-  res.json(kioskData.globalSettings);
-});
-
-app.post('/global-settings', (req, res) => {
-  const kioskData = readKioskData();
-  kioskData.globalSettings = { ...kioskData.globalSettings, ...req.body };
-  writeKioskData(kioskData);
-  res.json({ success: true, globalSettings: kioskData.globalSettings });
-});
-
-app.post('/kiosk', (req, res) => {
-  const kioskData = readKioskData();
-  const newItem = { id: kioskData.slides.length + 1, ...req.body };
-  kioskData.slides.push(newItem);
-  writeKioskData(kioskData);
-  res.json({ success: true, updatedData: kioskData.slides });
-});
-
-app.put('/kiosk/:id', (req, res) => {
-  const id = parseInt(req.params.id);
-  const kioskData = readKioskData();
-  const index = kioskData.slides.findIndex(item => item.id === id);
-
-  if (index !== -1) {
-    kioskData.slides[index] = { ...kioskData.slides[index], ...req.body };
-    writeKioskData(kioskData);
-    res.json({ success: true, updatedEntry: kioskData.slides[index] });
-  } else {
-    res.status(404).json({ success: false, message: 'Entry not found' });
+app.get('/kiosk', async (req, res) => {
+  try {
+    const kioskData = await readKioskData();
+    res.json(kioskData.slides);
+  } catch (error) {
+    console.error('Error reading kiosk data for /kiosk:', error);
+    res.status(500).json({ success: false, message: 'Failed to retrieve slides.' });
   }
 });
 
-app.get('/kiosk.json', (req, res) => {
-  const kioskData = readKioskData();
-  res.json(kioskData);
+app.get('/global-settings', async (req, res) => {
+  try {
+    const kioskData = await readKioskData();
+    res.json(kioskData.globalSettings);
+  } catch (error) {
+    console.error('Error reading kiosk data for /global-settings:', error);
+    res.status(500).json({ success: false, message: 'Failed to retrieve global settings.' });
+  }
+});
+
+app.post('/global-settings', async (req, res) => {
+  try {
+    const kioskData = await readKioskData();
+    kioskData.globalSettings = { ...kioskData.globalSettings, ...req.body };
+    await writeKioskData(kioskData);
+    res.json({ success: true, globalSettings: kioskData.globalSettings });
+  } catch (error) {
+    console.error('Error in /global-settings:', error);
+    res.status(500).json({ success: false, message: 'Failed to update global settings.' });
+  }
+});
+
+app.post('/kiosk', async (req, res) => {
+  try {
+    const kioskData = await readKioskData();
+    const newItem = { id: kioskData.slides.length + 1, ...req.body };
+    kioskData.slides.push(newItem);
+    await writeKioskData(kioskData);
+    res.json({ success: true, updatedData: kioskData.slides });
+  } catch (error) {
+    console.error('Error in /kiosk (POST):', error);
+    res.status(500).json({ success: false, message: 'Failed to add new item.' });
+  }
+});
+
+app.put('/kiosk/:id', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const kioskData = await readKioskData();
+    const index = kioskData.slides.findIndex(item => item.id === id);
+
+    if (index !== -1) {
+      kioskData.slides[index] = { ...kioskData.slides[index], ...req.body };
+      await writeKioskData(kioskData);
+      res.json({ success: true, updatedEntry: kioskData.slides[index] });
+    } else {
+      res.status(404).json({ success: false, message: 'Entry not found' });
+    }
+  } catch (error) {
+    console.error('Error in /kiosk/:id (PUT):', error);
+    res.status(500).json({ success: false, message: 'Failed to update item.' });
+  }
+});
+
+app.get('/kiosk.json', async (req, res) => {
+  try {
+    const kioskData = await readKioskData();
+    res.json(kioskData);
+  } catch (error) {
+    console.error('Error reading kiosk.json:', error);
+    res.status(500).json({ success: false, message: 'Failed to read kiosk data.' });
+  }
 });
 
 // Add this new endpoint to your server.js file
 
-app.post('/import-config', (req, res) => {
+app.post('/import-config', async (req, res) => {
   try {
       const newConfig = req.body;
       
@@ -107,7 +173,7 @@ app.post('/import-config', (req, res) => {
       }
 
       // Write the new configuration to file
-      writeKioskData(newConfig);
+      await writeKioskData(newConfig);
 
       res.json({
           success: true,
@@ -123,51 +189,66 @@ app.post('/import-config', (req, res) => {
 });
 
 
-app.delete('/kiosk/:id', (req, res) => {
-  const id = parseInt(req.params.id);
-  const kioskData = readKioskData();
-  const itemIndex = kioskData.slides.findIndex(item => item.id === id);
+app.delete('/kiosk/:id', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const kioskData = await readKioskData();
+    const itemIndex = kioskData.slides.findIndex(item => item.id === id);
 
-  if (itemIndex === -1) {
-    return res.status(404).json({ success: false, message: 'Item not found' });
-  }
+    if (itemIndex === -1) {
+      return res.status(404).json({ success: false, message: 'Item not found' });
+    }
 
-  kioskData.slides.splice(itemIndex, 1);
-  kioskData.slides = reorganizeIds(kioskData.slides);
-  writeKioskData(kioskData);
+    kioskData.slides.splice(itemIndex, 1);
+    kioskData.slides = reorganizeIds(kioskData.slides);
+    await writeKioskData(kioskData);
 
-  res.json({ success: true, updatedData: kioskData.slides });
-});
-
-app.post('/kiosk/reorder', (req, res) => {
-  const newOrder = req.body;
-  const kioskData = readKioskData();
-
-  if (!Array.isArray(newOrder)) {
-    return res.status(400).json({ success: false, message: 'Invalid order format' });
-  }
-
-  const orderedSlides = newOrder.map(id => kioskData.slides.find(item => item.id === id)).filter(Boolean);
-  if (orderedSlides.length !== newOrder.length) {
-    return res.status(400).json({ success: false, message: 'Some items were not found' });
-  }
-
-  kioskData.slides = reorganizeIds(orderedSlides);
-  writeKioskData(kioskData);
-  res.json({ success: true, updatedData: kioskData.slides });
-});
-
-app.post('/kiosk/:id/toggle-visibility', (req, res) => {
-  const id = parseInt(req.params.id);
-  const kioskData = readKioskData();
-  const itemIndex = kioskData.slides.findIndex(item => item.id === id);
-
-  if (itemIndex !== -1) {
-    kioskData.slides[itemIndex].visibility = !kioskData.slides[itemIndex].visibility;
-    writeKioskData(kioskData);
     res.json({ success: true, updatedData: kioskData.slides });
-  } else {
-    res.status(404).json({ success: false, message: 'Item not found' });
+  } catch (error) {
+    console.error('Error in /kiosk/:id (DELETE):', error);
+    res.status(500).json({ success: false, message: 'Failed to delete item.' });
+  }
+});
+
+app.post('/kiosk/reorder', async (req, res) => {
+  try {
+    const newOrder = req.body;
+    const kioskData = await readKioskData();
+
+    if (!Array.isArray(newOrder)) {
+      return res.status(400).json({ success: false, message: 'Invalid order format' });
+    }
+
+    const orderedSlides = newOrder.map(id => kioskData.slides.find(item => item.id === id)).filter(Boolean);
+    if (orderedSlides.length !== newOrder.length) {
+      return res.status(400).json({ success: false, message: 'Some items were not found' });
+    }
+
+    kioskData.slides = reorganizeIds(orderedSlides);
+    await writeKioskData(kioskData);
+    res.json({ success: true, updatedData: kioskData.slides });
+  } catch (error) {
+    console.error('Error in /kiosk/reorder:', error);
+    res.status(500).json({ success: false, message: 'Failed to reorder items.' });
+  }
+});
+
+app.post('/kiosk/:id/toggle-visibility', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const kioskData = await readKioskData();
+    const itemIndex = kioskData.slides.findIndex(item => item.id === id);
+
+    if (itemIndex !== -1) {
+      kioskData.slides[itemIndex].visibility = !kioskData.slides[itemIndex].visibility;
+      await writeKioskData(kioskData);
+      res.json({ success: true, updatedData: kioskData.slides });
+    } else {
+      res.status(404).json({ success: false, message: 'Item not found' });
+    }
+  } catch (error) {
+    console.error('Error in /kiosk/:id/toggle-visibility:', error);
+    res.status(500).json({ success: false, message: 'Failed to toggle visibility.' });
   }
 });
 
@@ -179,14 +260,14 @@ app.post('/upload', upload.single('image'), (req, res) => {
   }
 });
 
-// Add to your server.js file
-
 // Set up watermark upload storage
 const watermarkStorage = multer.diskStorage({
   destination: (req, file, cb) => {
       const dir = 'public/watermarks';
-      if (!fs.existsSync(dir)) {
-          fs.mkdirSync(dir, { recursive: true });
+      // This can remain sync as it's part of setup
+      const fsSync = require('fs');
+      if (!fsSync.existsSync(dir)) {
+          fsSync.mkdirSync(dir, { recursive: true });
       }
       cb(null, dir);
   },
