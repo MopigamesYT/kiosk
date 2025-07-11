@@ -43,8 +43,21 @@ body {
     padding: 2rem;
     box-sizing: border-box;
     color: #fff;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8), 0 4px 8px rgba(0, 0, 0, 0.6);
     transition: opacity 1s ease; /* Smooth fade transition */
+}
+
+/* Enhanced text shadows for theme backgrounds */
+.slide .slide-title {
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9), 0 4px 16px rgba(0, 0, 0, 0.7);
+}
+
+.slide .slide-description {
+    text-shadow: 0 2px 6px rgba(0, 0, 0, 0.8), 0 4px 12px rgba(0, 0, 0, 0.6);
+    background: rgba(0, 0, 0, 0.2);
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    backdrop-filter: blur(2px);
 }
 
 /* Rest of the CSS remains the same */

@@ -119,6 +119,22 @@ function toggleFullScreen(element) {
     }
 }
 
+// Color utilities
+function hexToRgb(hex) {
+    if (!hex) return null;
+    
+    // Remove the hash if present
+    hex = hex.replace('#', '');
+    
+    // Parse r, g, b values
+    const bigint = parseInt(hex, 16);
+    const r = (bigint >> 16) & 255;
+    const g = (bigint >> 8) & 255;
+    const b = bigint & 255;
+    
+    return { r, g, b };
+}
+
 // Content Loading
 async function loadContent() {
     if (state.isInitialLoad) {
@@ -301,7 +317,29 @@ function showSlide(index) {
         
         requestAnimationFrame(() => {
             nextSlide.style.opacity = '1';
-            elements.slideshow.style.backgroundColor = nextSlide.dataset.accentColor;
+            
+            // Check if current theme has background elements
+            const currentTheme = state.globalSettings.theme;
+            const hasThemeBackground = typeof window.themeHasBackground === 'function' && 
+                                     window.themeHasBackground(currentTheme);
+            
+            // Themes known to have backgrounds (fallback if function not available)
+            const themesWithBackgrounds = ['space', 'ocean', 'neon', 'forest', 'cyberpunk', 'retro', 'galaxy', 'desert', 'summer'];
+            const hasBgFallback = themesWithBackgrounds.includes(currentTheme);
+            
+            if (hasThemeBackground || hasBgFallback) {
+                // Use semi-transparent overlay instead of solid background
+                const accentColor = nextSlide.dataset.accentColor;
+                const rgb = hexToRgb(accentColor);
+                if (rgb) {
+                    elements.slideshow.style.backgroundColor = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.3)`;
+                } else {
+                    elements.slideshow.style.backgroundColor = 'rgba(0, 0, 0, 0.3)';
+                }
+            } else {
+                // Use solid background for themes without backgrounds
+                elements.slideshow.style.backgroundColor = nextSlide.dataset.accentColor;
+            }
         });
         
         state.currentSlideIndex = index;

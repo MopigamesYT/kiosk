@@ -1,19 +1,19 @@
 // Theme registry with metadata and French names
 const THEME_REGISTRY = {
-  default: { name: 'Par défaut', category: 'basic' },
-  christmas: { name: 'Noël', category: 'seasonal' },
-  summer: { name: 'Été', category: 'seasonal' },
-  halloween: { name: 'Halloween', category: 'seasonal' },
-  valentine: { name: 'Saint-Valentin', category: 'seasonal' },
-  easter: { name: 'Pâques', category: 'seasonal' },
-  space: { name: 'Espace', category: 'environment' },
-  ocean: { name: 'Océan', category: 'environment' },
-  neon: { name: 'Néon', category: 'artistic' },
-  forest: { name: 'Forêt', category: 'environment' },
-  cyberpunk: { name: 'Cyberpunk', category: 'artistic' },
-  retro: { name: 'Rétro', category: 'artistic' },
-  galaxy: { name: 'Galaxie', category: 'environment' },
-  desert: { name: 'Désert', category: 'environment' }
+  default: { name: 'Par défaut', category: 'basic', hasBackground: false },
+  christmas: { name: 'Noël', category: 'seasonal', hasBackground: false },
+  summer: { name: 'Été', category: 'seasonal', hasBackground: true },
+  halloween: { name: 'Halloween', category: 'seasonal', hasBackground: false },
+  valentine: { name: 'Saint-Valentin', category: 'seasonal', hasBackground: false },
+  easter: { name: 'Pâques', category: 'seasonal', hasBackground: false },
+  space: { name: 'Espace', category: 'environment', hasBackground: true },
+  ocean: { name: 'Océan', category: 'environment', hasBackground: true },
+  neon: { name: 'Néon', category: 'artistic', hasBackground: true },
+  forest: { name: 'Forêt', category: 'environment', hasBackground: true },
+  cyberpunk: { name: 'Cyberpunk', category: 'artistic', hasBackground: true },
+  retro: { name: 'Rétro', category: 'artistic', hasBackground: true },
+  galaxy: { name: 'Galaxie', category: 'environment', hasBackground: true },
+  desert: { name: 'Désert', category: 'environment', hasBackground: true }
 };
 
 /**
@@ -39,6 +39,15 @@ function getThemeName(themeId) {
  */
 function getThemeRegistry() {
   return { ...THEME_REGISTRY };
+}
+
+/**
+ * Check if a theme has a background
+ * @param {string} themeId - Theme identifier
+ * @returns {boolean} True if theme has background elements
+ */
+function themeHasBackground(themeId) {
+  return THEME_REGISTRY[themeId]?.hasBackground || false;
 }
 
 /**
@@ -934,4 +943,5 @@ window.getAvailableThemes = getAvailableThemes;
 window.getThemeName = getThemeName;
 window.getThemeRegistry = getThemeRegistry;
 window.isValidTheme = isValidTheme;
+window.themeHasBackground = themeHasBackground;
 window.applyTheme = applyTheme;
