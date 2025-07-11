@@ -24,12 +24,6 @@ class KioskState {
 
 const state = new KioskState();
 
-// Performance monitoring and image quality management
-let performanceMonitor = null;
-let imageQualityManager = null;
-let performanceScriptsLoaded = false;
-let performanceIndicator = null;
-
 // Theme loading promise
 let themesLoadedPromise = null;
 
@@ -54,151 +48,6 @@ function createThemesPromise() {
             }, 5000);
         }
     });
-}
-
-// Performance monitoring initialization
-function initializePerformanceMonitoring() {
-    return new Promise((resolve) => {
-        if (performanceScriptsLoaded) {
-            resolve();
-            return;
-        }
-
-        // Load performance monitoring scripts
-        const scripts = [
-            'js/performance/performanceMonitor.js',
-            'js/performance/imageQualityManager.js'
-        ];
-
-        let loadedCount = 0;
-
-        scripts.forEach(scriptSrc => {
-            const script = document.createElement('script');
-            script.src = scriptSrc;
-            
-            script.onload = () => {
-                loadedCount++;
-                if (loadedCount === scripts.length) {
-                    // Add a small delay to ensure classes are fully loaded
-                    setTimeout(() => {
-                        try {
-                            // Check if classes are available
-                            if (typeof window.PerformanceMonitor === 'undefined') {
-                                console.error('PerformanceMonitor class not available');
-                                resolve();
-                                return;
-                            }
-                            
-                            if (typeof window.ImageQualityManager === 'undefined') {
-                                console.error('ImageQualityManager class not available');
-                                resolve();
-                                return;
-                            }
-                            
-                            // Initialize performance monitoring
-                            performanceMonitor = new PerformanceMonitor({
-                                targetFPS: 60,
-                                minAcceptableFPS: 30,
-                                stutterThreshold: 3,
-                                recoveryThreshold: 20,
-                                onPerformanceChange: (event) => {
-                                    console.log(`📊 Performance level: ${event.currentLevel} (${event.fps.toFixed(1)} FPS)`);
-                                    updatePerformanceIndicator(event.currentLevel, event.fps);
-                                },
-                                onStutterDetected: (event) => {
-                                    console.warn(`⚠️ Performance stutter detected! FPS: ${event.fps.toFixed(1)}`);
-                                    showPerformanceIndicator();
-                                },
-                                onPerformanceRecovered: (event) => {
-                                    console.log(`✅ Performance recovered! FPS: ${event.fps.toFixed(1)}`);
-                                    updatePerformanceIndicator('high', event.fps);
-                                }
-                            });
-
-                            // Initialize image quality manager
-                            imageQualityManager = new ImageQualityManager({
-                                maxFileSize: 300 * 1024, // 300KB
-                                maxResolution: { width: 1920, height: 1080 },
-                                minResolution: { width: 854, height: 480 },
-                                minFileSize: 100 * 1024 // 100KB
-                            });
-
-                            // Connect them together
-                            imageQualityManager.init(performanceMonitor);
-                            
-                            // Start monitoring
-                            performanceMonitor.start();
-                            
-                            // Create performance indicator
-                            createPerformanceIndicator();
-                            
-                            performanceScriptsLoaded = true;
-                            console.log('🚀 Performance monitoring system initialized');
-                            resolve();
-                            
-                        } catch (error) {
-                            console.error('Error initializing performance monitoring:', error);
-                            console.warn('⚠️ Performance monitoring unavailable, continuing without optimization');
-                            resolve();
-                        }
-                    }, 100); // 100ms delay to ensure classes are loaded
-                }
-            };
-            
-            script.onerror = () => {
-                console.warn(`Failed to load performance script: ${scriptSrc}`);
-                loadedCount++;
-                if (loadedCount === scripts.length) {
-                    console.warn('⚠️ Performance monitoring unavailable, continuing without optimization');
-                    resolve();
-                }
-            };
-            
-            document.head.appendChild(script);
-        });
-    });
-}
-
-// Performance indicator functions
-function createPerformanceIndicator() {
-    performanceIndicator = document.createElement('div');
-    performanceIndicator.className = 'performance-indicator';
-    performanceIndicator.textContent = 'Performance: Good';
-    document.body.appendChild(performanceIndicator);
-    
-    // Show indicator briefly on startup, then hide
-    setTimeout(() => {
-        showPerformanceIndicator();
-        setTimeout(hidePerformanceIndicator, 3000);
-    }, 1000);
-}
-
-function updatePerformanceIndicator(level, fps) {
-    if (!performanceIndicator) return;
-    
-    performanceIndicator.className = `performance-indicator ${level}`;
-    performanceIndicator.textContent = `Performance: ${level.toUpperCase()} (${fps.toFixed(1)} FPS)`;
-}
-
-function showPerformanceIndicator() {
-    if (!performanceIndicator) return;
-    performanceIndicator.classList.add('visible');
-}
-
-function hidePerformanceIndicator() {
-    if (!performanceIndicator) return;
-    performanceIndicator.classList.remove('visible');
-}
-
-// Toggle performance indicator visibility (for debugging)
-function togglePerformanceIndicator() {
-    if (!performanceIndicator) return;
-    
-    if (performanceIndicator.classList.contains('visible')) {
-        hidePerformanceIndicator();
-    } else {
-        showPerformanceIndicator();
-    }
 }
 
 // DOM Elements
@@ -232,13 +81,6 @@ function initializeEventListeners() {
     elements.adminButton.addEventListener('click', () => window.location.href = '/admin');
     
     document.addEventListener('mousemove', handleMouseMove);
-    
-    // Add keyboard shortcut for performance indicator (P key)
-    document.addEventListener('keydown', (event) => {
-        if (event.key.toLowerCase() === 'p' && performanceIndicator) {
-            togglePerformanceIndicator();
-        }
-    });
     
     setTimeout(() => {
         state.mouseActive = true;
@@ -482,128 +324,14 @@ function createSlideElement(slide, index) {
     slideElement.style.opacity = index === state.currentSlideIndex ? '1' : '0';
     slideElement.dataset.accentColor = slide.accentColor;
 
-    // Create title and description
-    const titleHtml = `<h2 class="slide-title" style="font-size: ${DEFAULTS.TITLE_SIZE}px">${slide.text}</h2>`;
-    const descriptionHtml = slide.description ? 
-        `<p class="slide-description" style="font-size: ${DEFAULTS.DESCRIPTION_SIZE}px">${slide.description}</p>` : '';
+    const content = [
+        `<h2 class="slide-title" style="font-size: ${DEFAULTS.TITLE_SIZE}px">${slide.text}</h2>`,
+        slide.description ? `<p class="slide-description" style="font-size: ${DEFAULTS.DESCRIPTION_SIZE}px">${slide.description}</p>` : '',
+        slide.image ? `<img class="slide-image" src="${slide.image}" alt="${slide.text}">` : ''
+    ].join('');
 
-    // Handle images with performance optimization
-    if (slide.image && imageQualityManager && performanceScriptsLoaded) {
-        // Create optimized image asynchronously
-        createOptimizedImage(slide.image, slide.text).then(imageElement => {
-            const existingImage = slideElement.querySelector('.slide-image-container');
-            if (existingImage) {
-                existingImage.replaceWith(imageElement);
-            } else {
-                slideElement.appendChild(imageElement);
-            }
-        }).catch(error => {
-            console.error('Error creating optimized image:', error);
-            // Fallback to basic image
-            const fallbackImg = document.createElement('img');
-            fallbackImg.className = 'slide-image';
-            fallbackImg.src = slide.image;
-            fallbackImg.alt = slide.text;
-            fallbackImg.loading = 'lazy';
-            
-            const container = document.createElement('div');
-            container.className = 'slide-image-container';
-            container.appendChild(fallbackImg);
-            
-            // Replace loading container
-            const existingContainer = slideElement.querySelector('.slide-image-container.loading');
-            if (existingContainer) {
-                existingContainer.replaceWith(container);
-            } else {
-                slideElement.appendChild(container);
-            }
-        });
-
-        // Set initial content without image (will be added asynchronously)
-        slideElement.innerHTML = titleHtml + descriptionHtml + '<div class="slide-image-container loading">Loading image...</div>';
-    } else if (slide.image) {
-        // Fallback for when performance monitoring is not available or failed
-        console.log('🔄 Using basic image loading (performance monitoring unavailable)');
-        const imageHtml = `<img class="slide-image" src="${slide.image}" alt="${slide.text}" loading="lazy">`;
-        slideElement.innerHTML = titleHtml + descriptionHtml + imageHtml;
-        slideElement.innerHTML = titleHtml + descriptionHtml + imageHtml;
-    } else {
-        // No image
-        slideElement.innerHTML = titleHtml + descriptionHtml;
-    }
-
+    slideElement.innerHTML = content;
     return slideElement;
-}
-
-// Create optimized image element
-async function createOptimizedImage(imageSrc, altText) {
-    try {
-        // Temporarily increase monitoring sensitivity during image loading
-        if (performanceMonitor) {
-            performanceMonitor.increaseSensitivity();
-        }
-
-        // Get optimal image source based on current performance
-        const optimalSrc = await imageQualityManager.getOptimalImageSrc(imageSrc);
-        
-        // Create container for the image
-        const container = document.createElement('div');
-        container.className = 'slide-image-container';
-        
-        // Preload the image
-        const preloadResult = await imageQualityManager.preloadImage(optimalSrc);
-        
-        // Create the actual image element
-        const img = document.createElement('img');
-        img.className = 'slide-image';
-        img.src = preloadResult.src;
-        img.alt = altText;
-        img.loading = 'lazy';
-        
-        // Add load event listener to monitor performance impact
-        img.onload = () => {
-            console.log(`✅ Image loaded successfully: ${img.src}`);
-            container.classList.remove('loading');
-            
-            // Reset monitoring sensitivity after image loads
-            if (performanceMonitor) {
-                setTimeout(() => {
-                    performanceMonitor.resetSensitivity();
-                }, 1000);
-            }
-        };
-        
-        img.onerror = () => {
-            console.error(`❌ Failed to load image: ${img.src}`);
-            container.classList.remove('loading');
-            container.classList.add('error');
-            container.innerHTML = '<div class="image-error">Failed to load image</div>';
-        };
-        
-        container.appendChild(img);
-        return container;
-        
-    } catch (error) {
-        console.error('Error creating optimized image:', error);
-        
-        // Reset monitoring sensitivity on error
-        if (performanceMonitor) {
-            performanceMonitor.resetSensitivity();
-        }
-        
-        // Create fallback image
-        const container = document.createElement('div');
-        container.className = 'slide-image-container error';
-        
-        const img = document.createElement('img');
-        img.className = 'slide-image';
-        img.src = imageSrc;
-        img.alt = altText;
-        img.loading = 'lazy';
-        
-        container.appendChild(img);
-        return container;
-    }
 }
 
 function showNoSlidesMessage(errorMessage) {
@@ -704,44 +432,26 @@ document.head.appendChild(styleSheet);
 
 // Initialization
 function init() {
-    console.log('🚀 Initializing Kiosk System...');
+    const themeScript = document.createElement('script');
+    themeScript.src = 'themes.js';
     
-    // Initialize performance monitoring first
-    initializePerformanceMonitoring().then(() => {
-        // Then load themes
-        const themeScript = document.createElement('script');
-        themeScript.src = 'themes.js';
-        
-        // Create themes promise
-        themesLoadedPromise = createThemesPromise();
-        
-        // Wait for themes.js to load before starting
-        themeScript.onload = () => {
-            console.log('🎨 Themes loaded successfully');
-            startKioskApplication();
-        };
-        
-        // Fallback in case themes.js fails to load
-        themeScript.onerror = () => {
-            console.warn('⚠️ Failed to load themes.js, continuing without themes');
-            startKioskApplication();
-        };
-        
-        document.head.appendChild(themeScript);
-    });
-}
-
-// Start the main kiosk application
-function startKioskApplication() {
-    initializeEventListeners();
+    // Wait for themes.js to load before starting
+    themeScript.onload = () => {
+        console.log('Themes loaded successfully');
+        initializeEventListeners();
+        loadContent();
+        setInterval(loadContent, DEFAULTS.SLIDE_CHECK_INTERVAL);
+    };
     
-    // Load initial content
-    loadContent();
+    // Fallback in case themes.js fails to load
+    themeScript.onerror = () => {
+        console.warn('Failed to load themes.js, continuing without themes');
+        initializeEventListeners();
+        loadContent();
+        setInterval(loadContent, DEFAULTS.SLIDE_CHECK_INTERVAL);
+    };
     
-    // Set up periodic content updates
-    setInterval(loadContent, DEFAULTS.SLIDE_CHECK_INTERVAL);
-    
-    console.log('✨ Kiosk system fully initialized!');
+    document.head.appendChild(themeScript);
 }
 
 window.onload = init;
