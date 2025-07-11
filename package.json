@@ -2,9 +2,11 @@
   "name": "kiosk",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "app.js",
   "scripts": {
-    "test": "node ."
+    "start": "node app.js",
+    "dev": "nodemon app.js",
+    "test": "node app.js"
   },
   "keywords": [],
   "author": "",
