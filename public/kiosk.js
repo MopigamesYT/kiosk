@@ -24,6 +24,32 @@ class KioskState {
 
 const state = new KioskState();
 
+// Theme loading promise
+let themesLoadedPromise = null;
+
+// Create a promise that resolves when themes are loaded
+function createThemesPromise() {
+    return new Promise((resolve) => {
+        if (typeof window.applyTheme === 'function') {
+            resolve();
+        } else {
+            const checkInterval = setInterval(() => {
+                if (typeof window.applyTheme === 'function') {
+                    clearInterval(checkInterval);
+                    resolve();
+                }
+            }, 100);
+            
+            // Timeout after 5 seconds
+            setTimeout(() => {
+                clearInterval(checkInterval);
+                console.warn('Themes failed to load within 5 seconds');
+                resolve(); // Resolve anyway to not block the app
+            }, 5000);
+        }
+    });
+}
+
 // DOM Elements
 const elements = {
     cursor: createCursor(),
@@ -171,10 +197,31 @@ function handleContentUpdate(data) {
     DEFAULTS.TITLE_SIZE = state.globalSettings.titleFontSize || DEFAULTS.TITLE_SIZE;
     DEFAULTS.DESCRIPTION_SIZE = state.globalSettings.descriptionFontSize || DEFAULTS.DESCRIPTION_SIZE;
     
-    applyTheme(state.globalSettings.theme, state.previousTheme, elements.themeContainer);
-    state.previousTheme = state.globalSettings.theme;
+    // Apply theme safely using the promise
+    applyThemeSafely();
+    
     updateWatermark();
     updateSlides(data.slides || []);
+}
+
+// Safe theme application function
+async function applyThemeSafely() {
+    try {
+        await themesLoadedPromise;
+        
+        if (typeof window.applyTheme === 'function') {
+            applyTheme(state.globalSettings.theme, state.previousTheme, elements.themeContainer);
+            state.previousTheme = state.globalSettings.theme;
+        } else {
+            console.warn('Theme functions not available even after waiting');
+            // Clear any existing theme content as fallback
+            if (elements.themeContainer) {
+                elements.themeContainer.innerHTML = '';
+            }
+        }
+    } catch (error) {
+        console.error('Error applying theme:', error);
+    }
 }
 
 // Loading state management
@@ -387,11 +434,24 @@ document.head.appendChild(styleSheet);
 function init() {
     const themeScript = document.createElement('script');
     themeScript.src = 'themes.js';
+    
+    // Wait for themes.js to load before starting
+    themeScript.onload = () => {
+        console.log('Themes loaded successfully');
+        initializeEventListeners();
+        loadContent();
+        setInterval(loadContent, DEFAULTS.SLIDE_CHECK_INTERVAL);
+    };
+    
+    // Fallback in case themes.js fails to load
+    themeScript.onerror = () => {
+        console.warn('Failed to load themes.js, continuing without themes');
+        initializeEventListeners();
+        loadContent();
+        setInterval(loadContent, DEFAULTS.SLIDE_CHECK_INTERVAL);
+    };
+    
     document.head.appendChild(themeScript);
-
-    initializeEventListeners();
-    loadContent();
-    setInterval(loadContent, DEFAULTS.SLIDE_CHECK_INTERVAL);
 }
 
 window.onload = init;
