@@ -20,12 +20,6 @@ class KioskState {
         this.mouseActive = false;
         this.cursorTimeout = null;
         this.preloadedImages = new Set(); // Track preloaded image URLs
-        
-        // Performance monitoring
-        this.performanceMonitor = null;
-        this.imageQualityManager = null;
-        this.adaptiveQualityEnabled = true;
-        this.lastPerformanceLevel = 'high';
     }
 }
 
@@ -54,153 +48,6 @@ function createCursor() {
     });
     document.body.appendChild(cursor);
     return cursor;
-}
-
-// Initialize performance monitoring
-function initializePerformanceMonitoring() {
-    // Load performance modules
-    loadPerformanceScripts().then(() => {
-        state.performanceMonitor = new PerformanceMonitor({
-            targetFPS: 25,      // Conservative target for kiosk displays
-            minFPS: 15,         // Minimum acceptable FPS
-            sampleSize: 30,     // Smaller sample for faster response
-            stutterThreshold: 3 // Quick detection of issues
-        });
-
-        state.imageQualityManager = new ImageQualityManager({
-            maxFileSize: 400 * 1024,    // 400KB threshold
-            minFileSize: 80 * 1024,     // 80KB minimum
-            maxDimension: 1920,         // 1080p max
-            minDimension: 640,          // 640p minimum (better than 480p)
-            cacheSize: 30               // Conservative cache for memory
-        });
-
-        // Set up performance event listeners
-        state.performanceMonitor.on('stutter', handlePerformanceStutter);
-        state.performanceMonitor.on('smooth', handlePerformanceSmooth);
-        state.performanceMonitor.on('fpsChange', handleFPSChange);
-
-        // Start monitoring after initial load
-        if (!state.isInitialLoad) {
-            state.performanceMonitor.start();
-        }
-
-        console.log('🚀 Performance monitoring initialized');
-    }).catch(error => {
-        console.warn('⚠️ Failed to load performance modules:', error);
-        state.adaptiveQualityEnabled = false;
-    });
-}
-
-// Load performance monitoring scripts
-function loadPerformanceScripts() {
-    return new Promise((resolve, reject) => {
-        let scriptsLoaded = 0;
-        const scriptsToLoad = 2;
-        
-        const onScriptLoad = () => {
-            scriptsLoaded++;
-            if (scriptsLoaded === scriptsToLoad) {
-                resolve();
-            }
-        };
-
-        const onScriptError = (error) => {
-            reject(error);
-        };
-
-        // Load performance monitor
-        const perfMonitorScript = document.createElement('script');
-        perfMonitorScript.src = 'js/performance/performanceMonitor.js';
-        perfMonitorScript.onload = onScriptLoad;
-        perfMonitorScript.onerror = onScriptError;
-        document.head.appendChild(perfMonitorScript);
-
-        // Load image quality manager
-        const imageManagerScript = document.createElement('script');
-        imageManagerScript.src = 'js/performance/imageQualityManager.js';
-        imageManagerScript.onload = onScriptLoad;
-        imageManagerScript.onerror = onScriptError;
-        document.head.appendChild(imageManagerScript);
-    });
-}
-
-// Performance event handlers
-function handlePerformanceStutter(data) {
-    console.warn(`⚡ Performance stutter detected: ${data.fps}FPS (${data.severity})`);
-    
-    if (state.imageQualityManager && state.adaptiveQualityEnabled) {
-        const newLevel = data.severity === 'critical' ? 'low' : 'medium';
-        updatePerformanceLevel(newLevel, 'stutter detected');
-    }
-}
-
-function handlePerformanceSmooth(data) {
-    console.log(`✅ Performance smooth: ${data.fps}FPS`);
-    
-    // Only upgrade quality if we've been smooth for a while
-    if (state.imageQualityManager && state.adaptiveQualityEnabled) {
-        setTimeout(() => {
-            if (state.performanceMonitor && !state.performanceMonitor.isPerformancePoor()) {
-                updatePerformanceLevel('high', 'sustained smooth performance');
-            }
-        }, 5000); // Wait 5 seconds of smooth performance before upgrading
-    }
-}
-
-function handleFPSChange(data) {
-    // Update FPS indicator if visible (for debugging)
-    const fpsIndicator = document.getElementById('fps-indicator');
-    if (fpsIndicator) {
-        fpsIndicator.textContent = `${data.current} FPS`;
-        
-        // Color code based on performance
-        if (data.current >= 25) {
-            fpsIndicator.style.color = 'green';
-        } else if (data.current >= 15) {
-            fpsIndicator.style.color = 'orange';
-        } else {
-            fpsIndicator.style.color = 'red';
-        }
-    }
-}
-
-function updatePerformanceLevel(newLevel, reason) {
-    if (state.lastPerformanceLevel !== newLevel) {
-        console.log(`🎯 Performance level: ${state.lastPerformanceLevel} → ${newLevel} (${reason})`);
-        state.lastPerformanceLevel = newLevel;
-        state.imageQualityManager.setPerformanceLevel(newLevel);
-        
-        // If switching to lower quality, consider reloading current images
-        if (newLevel === 'low' && state.slides.length > 0) {
-            console.log('🔄 Reoptimizing current slide images for low performance...');
-            reoptimizeCurrentSlideImages();
-        }
-    }
-}
-
-// Reoptimize images for current slide when performance drops
-async function reoptimizeCurrentSlideImages() {
-    if (!state.imageQualityManager || !state.slides.length) return;
-    
-    const currentSlide = state.slides[state.currentSlideIndex];
-    if (!currentSlide || !currentSlide.image) return;
-    
-    try {
-        const optimizedSrc = await state.imageQualityManager.getOptimalImageSrc(currentSlide.image);
-        
-        // Update the current slide image if it's different
-        const slideElement = elements.slideshow.getElementsByClassName('slide')[state.currentSlideIndex];
-        if (slideElement) {
-            const imgElement = slideElement.querySelector('.slide-image');
-            if (imgElement && imgElement.src !== optimizedSrc) {
-                imgElement.src = optimizedSrc;
-                console.log(`🖼️ Updated current slide image for better performance`);
-            }
-        }
-    } catch (error) {
-        console.warn('Failed to reoptimize current slide image:', error);
-    }
 }
 
 // Event Listeners
@@ -275,92 +122,6 @@ function toggleFullScreen(element) {
 
 // Image Preloading Helper
 async function preloadImages(slides, options = {}) {
-    const { maxConcurrency = 3, timeout = 10000, globalSettings } = options;
-    
-    // Use adaptive quality manager if available
-    if (state.imageQualityManager && state.adaptiveQualityEnabled) {
-        return preloadImagesWithQualityAdaptation(slides, options);
-    }
-    
-    // Fallback to original preloading logic
-    return preloadImagesOriginal(slides, options);
-}
-
-// New adaptive quality preloading
-async function preloadImagesWithQualityAdaptation(slides, options = {}) {
-    const { maxConcurrency = 2, timeout = 15000, globalSettings } = options;
-    
-    // Extract unique image URLs from slides that aren't already preloaded
-    const slideImageUrls = slides
-        .filter(slide => slide.image && slide.visibility !== false)
-        .map(slide => slide.image);
-    
-    // Add watermark image if enabled
-    const watermarkUrls = [];
-    if (globalSettings?.watermark?.enabled && globalSettings.watermark.image) {
-        watermarkUrls.push(globalSettings.watermark.image);
-    }
-    
-    const allUrls = [...slideImageUrls, ...watermarkUrls];
-    const imageUrls = [...new Set(allUrls)].filter(url => !state.preloadedImages.has(url));
-
-    if (imageUrls.length === 0) {
-        console.log('📸 No new images to preload');
-        return [];
-    }
-
-    console.log(`📸 Starting adaptive preload of ${imageUrls.length} images...`);
-    
-    // Show progress UI
-    const loadingProgress = document.getElementById('loading-progress');
-    const progressFill = document.querySelector('.progress-fill');
-    const progressText = document.getElementById('progress-text');
-    const loadingText = document.getElementById('loading-text');
-    
-    loadingText.textContent = 'Optimizing images...';
-    loadingProgress.style.display = 'block';
-    progressText.textContent = `0 / ${imageUrls.length} images processed`;
-    
-    try {
-        // Use image quality manager for adaptive preloading
-        const results = await state.imageQualityManager.preloadImages(imageUrls, {
-            concurrency: maxConcurrency,
-            onProgress: (completed, total) => {
-                const percentage = (completed / total) * 100;
-                progressFill.style.width = `${percentage}%`;
-                progressText.textContent = `${completed} / ${total} images processed`;
-            }
-        });
-        
-        // Track successfully preloaded images
-        results.forEach(result => {
-            if (result.success) {
-                state.preloadedImages.add(result.original);
-                // Also track the optimized version if different
-                if (result.optimized !== result.original) {
-                    state.preloadedImages.add(result.optimized);
-                }
-            }
-        });
-        
-        const successCount = results.filter(r => r.success).length;
-        console.log(`🎉 Adaptively preloaded ${successCount}/${imageUrls.length} images`);
-        
-        // Hide progress UI
-        loadingProgress.style.display = 'none';
-        loadingText.textContent = 'Starting slideshow...';
-        
-        return results.filter(r => r.success).map(r => ({ src: r.optimized }));
-        
-    } catch (error) {
-        console.error('Error during adaptive image preloading:', error);
-        loadingProgress.style.display = 'none';
-        return [];
-    }
-}
-
-// Original preloading logic (fallback)
-async function preloadImagesOriginal(slides, options = {}) {
     const { maxConcurrency = 3, timeout = 10000, globalSettings } = options;
     
     // Extract unique image URLs from slides that aren't already preloaded
@@ -501,20 +262,15 @@ async function loadContent() {
                 timeout: 15000,    // Longer timeout for slow connections
                 globalSettings: data.globalSettings // Pass settings for watermark
             });
-                 // Track successfully preloaded images
-        preloadedImages.forEach(img => {
-            if (img && img.src) {
-                state.preloadedImages.add(img.src);
-            }
-        });
-        
-        console.log('🚀 All images preloaded - ready to start slideshow!');
-        
-        // Start performance monitoring after successful preload
-        if (state.performanceMonitor && state.isInitialLoad) {
-            console.log('🎯 Starting performance monitoring...');
-            state.performanceMonitor.start();
-        }
+            
+            // Track successfully preloaded images
+            preloadedImages.forEach(img => {
+                if (img && img.src) {
+                    state.preloadedImages.add(img.src);
+                }
+            });
+            
+            console.log('🚀 All images preloaded - ready to start slideshow!');
         }
 
         handleContentUpdate(data);
@@ -670,39 +426,13 @@ function createSlideElement(slide, index) {
     slideElement.style.opacity = index === state.currentSlideIndex ? '1' : '0';
     slideElement.dataset.accentColor = slide.accentColor;
 
-    const titleElement = `<h2 class="slide-title" style="font-size: ${DEFAULTS.TITLE_SIZE}px">${slide.text}</h2>`;
-    const descriptionElement = slide.description ? 
-        `<p class="slide-description" style="font-size: ${DEFAULTS.DESCRIPTION_SIZE}px">${slide.description}</p>` : '';
-    
-    let imageElement = '';
-    if (slide.image) {
-        // Use adaptive image source if quality manager is available
-        if (state.imageQualityManager && state.adaptiveQualityEnabled) {
-            // We'll set the src later with the optimized version
-            imageElement = `<img class="slide-image" data-original-src="${slide.image}" alt="${slide.text}">`;
-        } else {
-            imageElement = `<img class="slide-image" src="${slide.image}" alt="${slide.text}">`;
-        }
-    }
+    const content = [
+        `<h2 class="slide-title" style="font-size: ${DEFAULTS.TITLE_SIZE}px">${slide.text}</h2>`,
+        slide.description ? `<p class="slide-description" style="font-size: ${DEFAULTS.DESCRIPTION_SIZE}px">${slide.description}</p>` : '',
+        slide.image ? `<img class="slide-image" src="${slide.image}" alt="${slide.text}">` : ''
+    ].join('');
 
-    const content = [titleElement, descriptionElement, imageElement].join('');
     slideElement.innerHTML = content;
-
-    // If we have adaptive quality enabled, set optimized image source
-    if (slide.image && state.imageQualityManager && state.adaptiveQualityEnabled) {
-        const img = slideElement.querySelector('.slide-image');
-        if (img) {
-            state.imageQualityManager.getOptimalImageSrc(slide.image)
-                .then(optimizedSrc => {
-                    img.src = optimizedSrc;
-                })
-                .catch(error => {
-                    console.warn('Failed to get optimized image, using original:', error);
-                    img.src = slide.image;
-                });
-        }
-    }
-
     return slideElement;
 }
 
@@ -787,64 +517,8 @@ function init() {
     document.head.appendChild(themeScript);
 
     initializeEventListeners();
-    initializePerformanceMonitoring(); // Initialize performance monitoring
     loadContent();
     setInterval(loadContent, DEFAULTS.SLIDE_CHECK_INTERVAL);
 }
 
-// Add performance statistics display (for debugging)
-function createPerformanceIndicator() {
-    if (document.getElementById('fps-indicator')) return; // Already exists
-    
-    const indicator = document.createElement('div');
-    indicator.id = 'fps-indicator';
-    indicator.style.cssText = `
-        position: fixed;
-        top: 10px;
-        right: 10px;
-        background: rgba(0,0,0,0.7);
-        color: white;
-        padding: 5px 10px;
-        border-radius: 5px;
-        font-family: monospace;
-        font-size: 12px;
-        z-index: 10000;
-        display: none;
-    `;
-    indicator.textContent = '-- FPS';
-    document.body.appendChild(indicator);
-    
-    // Show/hide with double-click on admin button
-    let clickCount = 0;
-    elements.adminButton.addEventListener('click', (e) => {
-        clickCount++;
-        if (clickCount === 1) {
-            setTimeout(() => {
-                if (clickCount === 1) {
-                    // Single click - go to admin
-                    window.location.href = '/admin';
-                } else {
-                    // Double click - toggle performance indicator
-                    const display = indicator.style.display === 'none' ? 'block' : 'none';
-                    indicator.style.display = display;
-                    
-                    if (display === 'block') {
-                        console.log('🔍 Performance indicator enabled');
-                        if (state.performanceMonitor) {
-                            state.performanceMonitor.logStats();
-                        }
-                        if (state.imageQualityManager) {
-                            state.imageQualityManager.logStats();
-                        }
-                    }
-                }
-                clickCount = 0;
-            }, 300);
-        }
-    });
-}
-
-window.onload = () => {
-    init();
-    createPerformanceIndicator();
-};
+window.onload = init;
