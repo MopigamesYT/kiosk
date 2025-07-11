@@ -279,3 +279,124 @@ body {
 .watermark.top-right { top: 20px; right: 20px; }
 .watermark.bottom-left { bottom: 20px; left: 20px; }
 .watermark.bottom-right { bottom: 20px; right: 20px; }
+.watermark.center { top: 50%; left: 50%; transform: translate(-50%, -50%); }
+
+/* Performance-optimized image container styles */
+.slide-image-container {
+    position: relative;
+    max-width: 100%;
+    max-height: 70vh;
+    margin: 1rem 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: opacity 0.3s ease;
+}
+
+.slide-image-container.loading {
+    opacity: 0.7;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 2rem;
+    color: #fff;
+    font-size: 1.2rem;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+.slide-image-container.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 40px;
+    height: 40px;
+    margin: -20px 0 0 -20px;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-top: 3px solid #fff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+.slide-image-container.error {
+    background: rgba(255, 0, 0, 0.2);
+    border: 2px dashed rgba(255, 255, 255, 0.5);
+    border-radius: 8px;
+    padding: 2rem;
+    color: #fff;
+}
+
+.slide-image-container .image-error {
+    font-size: 1.1rem;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+/* Optimized image rendering */
+.slide-image {
+    max-width: 100%;
+    max-height: 70vh;
+    object-fit: contain;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    /* Hardware acceleration for smoother transitions */
+    transform: translateZ(0);
+    will-change: opacity, transform;
+    /* Optimize image rendering */
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: optimize-contrast;
+}
+
+/* Performance monitoring indicator (optional visual feedback) */
+.performance-indicator {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    padding: 5px 10px;
+    background: rgba(0, 0, 0, 0.7);
+    color: #fff;
+    border-radius: 4px;
+    font-size: 12px;
+    font-family: monospace;
+    z-index: 1001;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.performance-indicator.visible {
+    opacity: 1;
+}
+
+.performance-indicator.high {
+    border-left: 4px solid #4CAF50;
+}
+
+.performance-indicator.medium {
+    border-left: 4px solid #FF9800;
+}
+
+.performance-indicator.low {
+    border-left: 4px solid #F44336;
+}
+
+/* Spin animation for loading spinner */
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Optimized transitions for better performance */
+.slide {
+    /* Use GPU acceleration */
+    transform: translateZ(0);
+    will-change: opacity;
+    /* Reduce layout thrashing */
+    backface-visibility: hidden;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* Preload optimization classes */
+.preload-hint {
+    /* Hints for the browser to optimize loading */
+    content-visibility: auto;
+    contain-intrinsic-size: 800px 600px;
+}
+.watermark.bottom-right { bottom: 20px; right: 20px; }
