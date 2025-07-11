@@ -19,8 +19,7 @@ class KioskState {
         this.cursorVisible = false;
         this.mouseActive = false;
         this.cursorTimeout = null;
-        this.preloadedImages = new Map();
-        this.isPreloading = false;
+        this.preloadedImages = new Set(); // Track preloaded image URLs
     }
 }
 
@@ -121,6 +120,122 @@ function toggleFullScreen(element) {
     }
 }
 
+// Image Preloading Helper
+async function preloadImages(slides, options = {}) {
+    const { maxConcurrency = 3, timeout = 10000, globalSettings } = options;
+    
+    // Extract unique image URLs from slides that aren't already preloaded
+    const slideImageUrls = slides
+        .filter(slide => slide.image && slide.visibility !== false)
+        .map(slide => slide.image);
+    
+    // Add watermark image if enabled and not already preloaded
+    const watermarkUrls = [];
+    if (globalSettings?.watermark?.enabled && globalSettings.watermark.image) {
+        watermarkUrls.push(globalSettings.watermark.image);
+    }
+    
+    const allUrls = [...slideImageUrls, ...watermarkUrls];
+    const imageUrls = [...new Set(allUrls)].filter(url => !state.preloadedImages.has(url));
+
+    if (imageUrls.length === 0) {
+        console.log('📸 No new images to preload');
+        return [];
+    }
+
+    console.log(`📸 Starting preload of ${imageUrls.length} new images...`);
+    
+    // Show progress UI
+    const loadingProgress = document.getElementById('loading-progress');
+    const progressFill = document.querySelector('.progress-fill');
+    const progressText = document.getElementById('progress-text');
+    const loadingText = document.getElementById('loading-text');
+    
+    loadingText.textContent = 'Loading images...';
+    loadingProgress.style.display = 'block';
+    progressText.textContent = `0 / ${imageUrls.length} images loaded`;
+    
+    let loadedCount = 0;
+    
+    // Update progress
+    const updateProgress = () => {
+        const percentage = (loadedCount / imageUrls.length) * 100;
+        progressFill.style.width = `${percentage}%`;
+        progressText.textContent = `${loadedCount} / ${imageUrls.length} images loaded`;
+    };
+    
+    // Preload single image with timeout
+    const preloadSingleImage = (url) => {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            const timeoutId = setTimeout(() => {
+                console.warn(`⚠️ Image timeout: ${url}`);
+                reject(new Error(`Timeout loading image: ${url}`));
+            }, timeout);
+
+            img.onload = () => {
+                clearTimeout(timeoutId);
+                loadedCount++;
+                updateProgress();
+                console.log(`✅ Preloaded (${loadedCount}/${imageUrls.length}): ${url}`);
+                resolve(img);
+            };
+
+            img.onerror = () => {
+                clearTimeout(timeoutId);
+                loadedCount++;
+                updateProgress();
+                console.warn(`❌ Failed to load (${loadedCount}/${imageUrls.length}): ${url}`);
+                reject(new Error(`Failed to load image: ${url}`));
+            };
+
+            img.src = url;
+        });
+    };
+
+    // Limit concurrency to avoid overwhelming the Raspberry Pi
+    const preloadWithLimit = async (urls) => {
+        const results = [];
+        const executing = [];
+
+        for (const url of urls) {
+            const promise = preloadSingleImage(url).catch(error => {
+                console.warn(`Skipping failed image: ${url}`, error.message);
+                return null; // Don't fail the whole process for one bad image
+            });
+
+            results.push(promise);
+
+            if (urls.length >= maxConcurrency) {
+                executing.push(promise);
+
+                if (executing.length >= maxConcurrency) {
+                    await Promise.race(executing);
+                    executing.splice(executing.findIndex(p => p === promise), 1);
+                }
+            }
+        }
+
+        return Promise.all(results);
+    };
+
+    try {
+        const preloadedImages = await preloadWithLimit(imageUrls);
+        const successCount = preloadedImages.filter(img => img !== null).length;
+        console.log(`🎉 Preloaded ${successCount}/${imageUrls.length} images successfully`);
+        
+        // Hide progress UI
+        loadingProgress.style.display = 'none';
+        loadingText.textContent = 'Starting slideshow...';
+        
+        return preloadedImages.filter(img => img !== null);
+    } catch (error) {
+        console.error('Error during image preloading:', error);
+        loadingProgress.style.display = 'none';
+        return [];
+    }
+}
+
 // Content Loading
 async function loadContent() {
     if (state.isInitialLoad) {
@@ -128,19 +243,69 @@ async function loadContent() {
     }
 
     try {
+        console.log('🔄 Fetching kiosk data...');
         const response = await fetch(`kiosk.json?t=${Date.now()}`);
         if (!response.ok) throw new Error('Network response was not ok');
         
         const data = await response.json();
-        await handleContentUpdate(data);
+        console.log('✅ Kiosk data loaded');
+
+        // Check if we need to preload any new images
+        const shouldPreload = state.isInitialLoad || hasNewImages(data.slides) || hasNewWatermark(data.globalSettings);
+        
+        if (shouldPreload && (data.slides?.length > 0 || data.globalSettings?.watermark?.image)) {
+            const loadType = state.isInitialLoad ? 'Initial load' : 'New content detected';
+            console.log(`🖼️ ${loadType} - preloading images...`);
+            
+            const preloadedImages = await preloadImages(data.slides || [], {
+                maxConcurrency: 2, // Conservative for Raspberry Pi
+                timeout: 15000,    // Longer timeout for slow connections
+                globalSettings: data.globalSettings // Pass settings for watermark
+            });
+            
+            // Track successfully preloaded images
+            preloadedImages.forEach(img => {
+                if (img && img.src) {
+                    state.preloadedImages.add(img.src);
+                }
+            });
+            
+            console.log('🚀 All images preloaded - ready to start slideshow!');
+        }
+
+        handleContentUpdate(data);
     } catch (error) {
         console.error('Error loading kiosk data:', error);
         showNoSlidesMessage(error.message);
-        hideLoading();
+    } finally {
+        if (state.isInitialLoad) {
+            hideLoading();
+            state.isInitialLoad = false;
+        }
     }
 }
 
-async function handleContentUpdate(data) {
+// Helper function to check if there are new images to preload
+function hasNewImages(slides) {
+    if (!slides) return false;
+    
+    const currentImageUrls = slides
+        .filter(slide => slide.image && slide.visibility !== false)
+        .map(slide => slide.image);
+    
+    return currentImageUrls.some(url => !state.preloadedImages.has(url));
+}
+
+// Helper function to check if there's a new watermark to preload
+function hasNewWatermark(globalSettings) {
+    if (!globalSettings?.watermark?.enabled || !globalSettings.watermark.image) {
+        return false;
+    }
+    
+    return !state.preloadedImages.has(globalSettings.watermark.image);
+}
+
+function handleContentUpdate(data) {
     const oldFontSettings = {
         titleFontSize: state.globalSettings.titleFontSize,
         descriptionFontSize: state.globalSettings.descriptionFontSize
@@ -149,7 +314,7 @@ async function handleContentUpdate(data) {
     state.globalSettings = data.globalSettings || {};
     
     if (fontSettingsChanged(oldFontSettings)) {
-        await updateSlides(data.slides || []);
+        updateSlides(data.slides || []);
     }
 
     DEFAULTS.TITLE_SIZE = state.globalSettings.titleFontSize || DEFAULTS.TITLE_SIZE;
@@ -158,100 +323,16 @@ async function handleContentUpdate(data) {
     applyTheme(state.globalSettings.theme, state.previousTheme, elements.themeContainer);
     state.previousTheme = state.globalSettings.theme;
     updateWatermark();
-    await updateSlides(data.slides || []);
-    
-    // Only hide loading after everything is ready
-    if (state.isInitialLoad) {
-        hideLoading();
-        state.isInitialLoad = false;
-    }
+    updateSlides(data.slides || []);
 }
 
 // Loading state management
 function showLoading() {
     elements.loading.style.display = 'flex';
-    updateLoadingMessage('Loading...');
 }
 
 function hideLoading() {
     elements.loading.style.display = 'none';
-}
-
-function updateLoadingMessage(message) {
-    const loadingText = elements.loading.querySelector('p');
-    if (loadingText) {
-        loadingText.textContent = message;
-    }
-}
-
-// Image preloading functions
-function preloadImage(src) {
-    return new Promise((resolve, reject) => {
-        // Check if already preloaded
-        if (state.preloadedImages.has(src)) {
-            resolve(state.preloadedImages.get(src));
-            return;
-        }
-
-        const img = new Image();
-        img.onload = () => {
-            state.preloadedImages.set(src, img);
-            resolve(img);
-        };
-        img.onerror = () => {
-            console.warn(`Failed to preload image: ${src}`);
-            // Don't reject, just resolve with null so slideshow continues
-            resolve(null);
-        };
-        img.src = src;
-    });
-}
-
-async function preloadAllImages(slides) {
-    if (state.isPreloading) return;
-    state.isPreloading = true;
-
-    const imageUrls = [];
-    
-    // Collect all image URLs from slides
-    slides.forEach(slide => {
-        if (slide.image) {
-            imageUrls.push(slide.image);
-        }
-    });
-
-    // Add watermark image if present
-    const watermarkSettings = state.globalSettings.watermark;
-    if (watermarkSettings?.enabled && watermarkSettings.image) {
-        imageUrls.push(watermarkSettings.image);
-    }
-
-    if (imageUrls.length === 0) {
-        state.isPreloading = false;
-        return;
-    }
-
-    updateLoadingMessage(`Preloading images (0/${imageUrls.length})...`);
-
-    // Preload images with progress updates
-    let loadedCount = 0;
-    const preloadPromises = imageUrls.map(async (url) => {
-        const result = await preloadImage(url);
-        loadedCount++;
-        updateLoadingMessage(`Preloading images (${loadedCount}/${imageUrls.length})...`);
-        return result;
-    });
-
-    try {
-        await Promise.all(preloadPromises);
-        updateLoadingMessage('Images loaded, starting slideshow...');
-        // Small delay to show completion message
-        await new Promise(resolve => setTimeout(resolve, 500));
-    } catch (error) {
-        console.error('Error preloading images:', error);
-    } finally {
-        state.isPreloading = false;
-    }
 }
 
 function fontSettingsChanged(oldSettings) {
@@ -271,34 +352,22 @@ function updateWatermark() {
 
     const watermarkSettings = state.globalSettings.watermark;
     if (watermarkSettings?.enabled && watermarkSettings.image) {
-        // Use preloaded image if available
-        const preloadedImg = state.preloadedImages.get(watermarkSettings.image);
-        if (preloadedImg) {
-            const imgElement = preloadedImg.cloneNode(true);
-            imgElement.alt = 'Watermark';
-            imgElement.style.width = `${watermarkSettings.size}px`;
-            imgElement.style.opacity = watermarkSettings.opacity / 100;
-            watermark.innerHTML = '';
-            watermark.appendChild(imgElement);
-        } else {
-            // Fallback to regular img tag
-            watermark.innerHTML = `<img src="${watermarkSettings.image}" alt="Watermark">`;
-            const img = watermark.querySelector('img');
-            if (img) {
-                img.style.width = `${watermarkSettings.size}px`;
-                img.style.opacity = watermarkSettings.opacity / 100;
-            }
-        }
-        
+        watermark.innerHTML = `<img src="${watermarkSettings.image}" alt="Watermark">`;
         watermark.style.display = 'block';
         watermark.className = `watermark ${watermarkSettings.position}`;
+        
+        const img = watermark.querySelector('img');
+        if (img) {
+            img.style.width = `${watermarkSettings.size}px`;
+            img.style.opacity = watermarkSettings.opacity / 100;
+        }
     } else {
         watermark.style.display = 'none';
     }
 }
 
 // Slideshow Management
-async function updateSlides(data) {
+function updateSlides(data) {
     const visibleSlides = data.filter(item => item.visibility !== false);
 
     if (visibleSlides.length === 0) {
@@ -311,12 +380,6 @@ async function updateSlides(data) {
 
     if (JSON.stringify(newSlides) !== JSON.stringify(state.slides)) {
         state.slides = newSlides;
-        
-        // Preload images before showing slides
-        if (state.isInitialLoad) {
-            await preloadAllImages(state.slides);
-        }
-        
         rebuildSlideshow();
     }
 }
@@ -365,25 +428,11 @@ function createSlideElement(slide, index) {
 
     const content = [
         `<h2 class="slide-title" style="font-size: ${DEFAULTS.TITLE_SIZE}px">${slide.text}</h2>`,
-        slide.description ? `<p class="slide-description" style="font-size: ${DEFAULTS.DESCRIPTION_SIZE}px">${slide.description}</p>` : ''
-    ];
+        slide.description ? `<p class="slide-description" style="font-size: ${DEFAULTS.DESCRIPTION_SIZE}px">${slide.description}</p>` : '',
+        slide.image ? `<img class="slide-image" src="${slide.image}" alt="${slide.text}">` : ''
+    ].join('');
 
-    // Use preloaded image if available, otherwise create normal img tag
-    if (slide.image) {
-        const preloadedImg = state.preloadedImages.get(slide.image);
-        if (preloadedImg) {
-            // Clone the preloaded image for better performance
-            const imgElement = preloadedImg.cloneNode(true);
-            imgElement.className = 'slide-image';
-            imgElement.alt = slide.text;
-            content.push(imgElement.outerHTML);
-        } else {
-            // Fallback to regular img tag
-            content.push(`<img class="slide-image" src="${slide.image}" alt="${slide.text}">`);
-        }
-    }
-
-    slideElement.innerHTML = content.join('');
+    slideElement.innerHTML = content;
     return slideElement;
 }
 
