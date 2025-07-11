@@ -52,11 +52,11 @@ function createThemesPromise() {
 
 // DOM Elements
 const elements = {
-    cursor: createCursor(),
-    adminButton: document.getElementById('admin-button'),
-    slideshow: document.getElementById('slideshow'),
-    loading: document.getElementById('loading'),
-    themeContainer: document.getElementById('theme-container')
+    cursor: null, // Will be created in init()
+    adminButton: null, // Will be set in init()
+    slideshow: null, // Will be set in init()
+    loading: null, // Will be set in init()
+    themeContainer: null // Will be set in init()
 };
 
 // Initialize cursor
@@ -69,9 +69,11 @@ function createCursor() {
         borderRadius: '50%',
         position: 'absolute',
         pointerEvents: 'none',
-        zIndex: '9999'
+        zIndex: '9999',
+        boxShadow: '0 0 0 2px rgba(0, 0, 0, 0.8), 0 0 8px rgba(0, 0, 0, 0.6)'
     });
-    document.body.appendChild(cursor);
+    // Append to container instead of body so it's visible in fullscreen
+    document.getElementById('container').appendChild(cursor);
     return cursor;
 }
 
@@ -245,7 +247,8 @@ function updateWatermark() {
         watermark = document.createElement('div');
         watermark.id = 'watermark';
         watermark.className = 'watermark';
-        document.body.appendChild(watermark);
+        // Append to container instead of body so it's visible in fullscreen
+        document.getElementById('container').appendChild(watermark);
     }
 
     const watermarkSettings = state.globalSettings.watermark;
@@ -432,6 +435,13 @@ document.head.appendChild(styleSheet);
 
 // Initialization
 function init() {
+    // Initialize DOM elements
+    elements.cursor = createCursor();
+    elements.adminButton = document.getElementById('admin-button');
+    elements.slideshow = document.getElementById('slideshow');
+    elements.loading = document.getElementById('loading');
+    elements.themeContainer = document.getElementById('theme-container');
+    
     const themeScript = document.createElement('script');
     themeScript.src = 'themes.js';
     
