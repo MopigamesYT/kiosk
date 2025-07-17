@@ -535,6 +535,52 @@ input[type="range"]::-moz-range-thumb {
     border-color: #444;
 }
 
+/* Performance Settings */
+.performance-settings {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #ddd;
+}
+
+.performance-control {
+    margin: 15px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.performance-control label {
+    font-weight: 500;
+    color: #333;
+}
+
+.performance-control input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    margin-right: 8px;
+    cursor: pointer;
+}
+
+.setting-help {
+    font-size: 0.9em;
+    color: #666;
+    margin: 5px 0 0 0;
+    line-height: 1.4;
+    font-style: italic;
+}
+
+.dark-theme .performance-settings {
+    border-top-color: #444;
+}
+
+.dark-theme .performance-control label {
+    color: #e0e0e0;
+}
+
+.dark-theme .setting-help {
+    color: #aaa;
+}
+
 /* Add these styles to your existing CSS file */
 .config-io-settings {
     margin-top: 20px;

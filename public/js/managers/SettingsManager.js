@@ -34,6 +34,9 @@ export class SettingsManager {
       titleSizeDisplay: document.getElementById('title-size-display'),
       descriptionSizeDisplay: document.getElementById('description-size-display'),
       
+      // Performance controls
+      lowPerformanceMode: document.getElementById('low-performance-mode'),
+      
       // Watermark controls
       watermarkEnabled: document.getElementById('watermark-enabled'),
       watermarkUpload: document.getElementById('watermarkUpload'),
@@ -113,6 +116,9 @@ export class SettingsManager {
 
     // Watermark controls
     this.attachWatermarkEventListeners();
+
+    // Performance controls
+    this.attachPerformanceEventListeners();
   }
 
   /**
@@ -154,6 +160,46 @@ export class SettingsManager {
   }
 
   /**
+   * Attach performance-specific event listeners
+   */
+  attachPerformanceEventListeners() {
+    // Auto-save performance settings on change
+    if (this.elements.lowPerformanceMode) {
+      this.elements.lowPerformanceMode.addEventListener('change', () => this.savePerformanceSettings());
+    }
+  }
+
+  /**
+   * Save performance settings
+   */
+  async savePerformanceSettings() {
+    try {
+      const settings = {
+        theme: this.elements.kioskThemeSelect?.value || 'default',
+        titleFontSize: parseInt(this.elements.titleFontSize?.value || 48),
+        descriptionFontSize: parseInt(this.elements.descriptionFontSize?.value || 24),
+        lowPerformanceMode: this.elements.lowPerformanceMode?.checked || false,
+        watermark: this.collectWatermarkSettings()
+      };
+
+      const result = await UIHelpers.apiRequest('/global-settings', {
+        method: 'POST',
+        body: JSON.stringify(settings)
+      });
+
+      if (result.success) {
+        UIHelpers.showNotification('Performance settings saved', 'success');
+      }
+      
+      return result.success;
+    } catch (error) {
+      console.error('Error saving performance settings:', error);
+      UIHelpers.showNotification('Failed to save performance settings', 'error');
+      return false;
+    }
+  }
+
+  /**
    * Load global settings from server
    */
   async loadSettings() {
@@ -184,6 +230,11 @@ export class SettingsManager {
     if (this.elements.descriptionFontSize) {
       this.elements.descriptionFontSize.value = settings.descriptionFontSize || 24;
       this.elements.descriptionSizeDisplay.textContent = `${this.elements.descriptionFontSize.value}px`;
+    }
+
+    // Performance settings
+    if (this.elements.lowPerformanceMode) {
+      this.elements.lowPerformanceMode.checked = settings.lowPerformanceMode || false;
     }
 
     // Watermark settings
@@ -248,7 +299,8 @@ export class SettingsManager {
       const settings = {
         theme: this.elements.kioskThemeSelect?.value || 'default',
         titleFontSize: parseInt(this.elements.titleFontSize?.value || 48),
-        descriptionFontSize: parseInt(this.elements.descriptionFontSize?.value || 24)
+        descriptionFontSize: parseInt(this.elements.descriptionFontSize?.value || 24),
+        lowPerformanceMode: this.elements.lowPerformanceMode?.checked || false
       };
 
       // Add watermark settings if they exist
@@ -314,6 +366,7 @@ export class SettingsManager {
         theme: this.elements.kioskThemeSelect?.value || 'default',
         titleFontSize: parseInt(this.elements.titleFontSize?.value || 48),
         descriptionFontSize: parseInt(this.elements.descriptionFontSize?.value || 24),
+        lowPerformanceMode: this.elements.lowPerformanceMode?.checked || false,
         watermark: this.collectWatermarkSettings(imagePath)
       };
 

@@ -17,7 +17,10 @@ async function updateImageQuality(isLow) {
             img._originalUrl = img.src; // Store original URL
         }
         
-        const newSrc = await imgQualityManager.getImageUrl(img._originalUrl, isLow);
+        // Force low quality if global setting is enabled or performance is low
+        const shouldUseLowQuality = isLow || state.globalSettings.lowPerformanceMode;
+        
+        const newSrc = await imgQualityManager.getImageUrl(img._originalUrl, shouldUseLowQuality);
         if (img.src !== newSrc) {
             img.src = newSrc;
         }
@@ -219,6 +222,14 @@ function handleContentUpdate(data) {
 
     state.globalSettings = data.globalSettings || {};
     
+    // Apply low performance mode styling if enabled
+    const container = document.getElementById('container');
+    if (state.globalSettings.lowPerformanceMode) {
+        container.classList.add('low-performance');
+    } else {
+        container.classList.remove('low-performance');
+    }
+    
     if (fontSettingsChanged(oldFontSettings)) {
         updateSlides(data.slides || []);
     }
@@ -361,11 +372,22 @@ function createSlideElement(slide, index) {
     ].join('');
 
     slideElement.innerHTML = content;
-    // Store original URL for quality management
+    
+    // Store original URL and apply performance mode if needed
     const imgEl = slideElement.querySelector('.slide-image');
     if (imgEl) {
         imgEl._originalUrl = slide.image;
+        
+        // Apply low performance mode if enabled in settings
+        if (state.globalSettings.lowPerformanceMode) {
+            imgQualityManager.getImageUrl(slide.image, true).then(lowQualityUrl => {
+                if (imgEl.src !== lowQualityUrl) {
+                    imgEl.src = lowQualityUrl;
+                }
+            });
+        }
     }
+    
     return slideElement;
 }
 
@@ -480,11 +502,17 @@ function init() {
     perfMonitor.start();
     perfMonitor.onLowFPS(fps => {
         console.warn('Low FPS detected:', fps);
-        updateImageQuality(true);
+        // Don't force low quality if global setting already enforces it
+        if (!state.globalSettings.lowPerformanceMode) {
+            updateImageQuality(true);
+        }
     });
     perfMonitor.onHighFPS(fps => {
         console.info('High FPS restored:', fps);
-        updateImageQuality(false);
+        // Only restore high quality if global setting allows it
+        if (!state.globalSettings.lowPerformanceMode) {
+            updateImageQuality(false);
+        }
     });
     
     const themeScript = document.createElement('script');

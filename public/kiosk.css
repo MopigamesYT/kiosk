@@ -293,3 +293,28 @@ body {
 .watermark.top-right { top: 20px; right: 20px; }
 .watermark.bottom-left { bottom: 20px; left: 20px; }
 .watermark.bottom-right { bottom: 20px; right: 20px; }
+
+/* Low Performance Mode - Reduce animations and effects */
+.low-performance .slide-title,
+.low-performance .slide-description,
+.low-performance .slide-image {
+    animation: none !important;
+    opacity: 1 !important;
+}
+
+.low-performance .slide {
+    transition: opacity 0.3s ease !important;
+}
+
+.low-performance .slide img {
+    filter: none !important;
+    box-shadow: none !important;
+}
+
+.low-performance #theme-container {
+    display: none !important;
+}
+
+.low-performance .trail {
+    display: none !important;
+}

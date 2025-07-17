@@ -1,11 +1,12 @@
 // imageQualityManager.js
 // Decide which image resolution to load based on performance and file size
 export class ImageQualityManager {
-    constructor({ maxSizeKB = 300, minSizeKB = 100, minWidth = 854, minHeight = 480 } = {}) {
+    constructor({ maxSizeKB = 300, minSizeKB = 100, minWidth = 854, minHeight = 480, lowQuality = 0.6 } = {}) {
         this.maxSizeKB = maxSizeKB;
         this.minSizeKB = minSizeKB;
         this.minWidth = minWidth;
         this.minHeight = minHeight;
+        this.lowQuality = lowQuality; // Default quality for reduced quality images
         this.processedImages = new Map(); // Cache processed images
     }
 
@@ -77,6 +78,58 @@ export class ImageQualityManager {
         }
     }
 
+    // Create a quality-compressed version while preserving original dimensions
+    async createReducedQualityVersion(originalUrl, quality = null) {
+        // Use instance default quality if not specified
+        const actualQuality = quality !== null ? quality : this.lowQuality;
+        const cacheKey = `${originalUrl}_quality_${actualQuality}`;
+        
+        if (this.processedImages.has(cacheKey)) {
+            return this.processedImages.get(cacheKey);
+        }
+
+        try {
+            // Load the original image
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            
+            const loadPromise = new Promise((resolve, reject) => {
+                img.onload = () => resolve(img);
+                img.onerror = () => reject(new Error('Failed to load image'));
+            });
+            
+            img.src = originalUrl;
+            await loadPromise;
+
+            // Create canvas with original dimensions
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Keep original dimensions for display consistency
+            canvas.width = img.width;
+            canvas.height = img.height;
+            ctx.drawImage(img, 0, 0, img.width, img.height);
+
+            // Convert to compressed data URL - reduce quality only, not size
+            let compressedDataUrl;
+            if (this.hasTransparency(ctx, canvas.width, canvas.height)) {
+                // Use PNG for images with transparency (can't compress PNG quality much)
+                compressedDataUrl = canvas.toDataURL('image/png');
+            } else {
+                // Use JPEG with reduced quality for opaque images
+                compressedDataUrl = canvas.toDataURL('image/jpeg', actualQuality);
+            }
+            
+            // Cache the result
+            this.processedImages.set(cacheKey, compressedDataUrl);
+            
+            return compressedDataUrl;
+        } catch (error) {
+            console.warn('Failed to create reduced quality version:', error);
+            return originalUrl; // Fallback to original
+        }
+    }
+
     // Check if canvas has any transparent pixels
     hasTransparency(ctx, width, height) {
         try {
@@ -102,7 +155,7 @@ export class ImageQualityManager {
             return originalUrl; // Use original high-quality image
         }
 
-        // Create and return low-quality version
-        return await this.createLowQualityVersion(originalUrl);
+        // Create and return reduced quality version (preserves original dimensions)
+        return await this.createReducedQualityVersion(originalUrl);
     }
 }
