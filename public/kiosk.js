@@ -18,7 +18,16 @@ async function updateImageQuality(isLow) {
         }
         
         // Force low quality if global setting is enabled or performance is low
-        const shouldUseLowQuality = isLow || state.globalSettings.lowPerformanceMode;
+        const performance = state.globalSettings.performance || {};
+        let shouldUseLowQuality = isLow;
+        
+        // If we have new performance settings, use them
+        if (state.globalSettings.performance) {
+            shouldUseLowQuality = shouldUseLowQuality || performance.forceLowQualityImages;
+        } else {
+            // Fallback to legacy mode only if no new performance settings
+            shouldUseLowQuality = shouldUseLowQuality || state.globalSettings.lowPerformanceMode;
+        }
         
         const newSrc = await imgQualityManager.getImageUrl(img._originalUrl, shouldUseLowQuality);
         if (img.src !== newSrc) {
@@ -27,6 +36,64 @@ async function updateImageQuality(isLow) {
     });
     
     await Promise.all(promises);
+}
+
+// Apply individual performance settings
+function applyPerformanceSettings() {
+    const container = document.getElementById('container');
+    const performance = state.globalSettings.performance || {};
+    
+    // Remove all performance classes first
+    container.classList.remove(
+        'perf-no-animations',
+        'perf-fast-transitions', 
+        'perf-no-image-effects',
+        'perf-no-themes',
+        'perf-no-cursor-trails',
+        'low-performance'
+    );
+    
+    // Hide FPS counter by default
+    if (elements.fpsCounter) {
+        elements.fpsCounter.style.display = 'none';
+    }
+
+    // If we have new performance settings, use them (ignore legacy mode)
+    if (state.globalSettings.performance) {
+        // Apply classes based on individual settings
+        if (performance.disableAnimations) {
+            container.classList.add('perf-no-animations');
+        }
+        
+        if (performance.fastTransitions) {
+            container.classList.add('perf-fast-transitions');
+        }
+        
+        if (performance.disableImageEffects) {
+            container.classList.add('perf-no-image-effects');
+        }
+        
+        if (performance.disableThemes) {
+            container.classList.add('perf-no-themes');
+        }
+        
+        if (performance.disableCursorTrails) {
+            container.classList.add('perf-no-cursor-trails');
+        }
+        if (performance.fastTransitions) container.classList.add('perf-fast-transitions');
+        
+        // Show/hide FPS counter
+        if (performance.showFpsCounter && elements.fpsCounter) {
+            elements.fpsCounter.style.display = 'block';
+        }
+
+    } else {
+        // Legacy low performance mode
+        const legacyMode = state.globalSettings.lowPerformanceMode;
+        if (legacyMode) {
+            container.classList.add('low-performance');
+        }
+    }
 }
 // Constants and state management
 const DEFAULTS = {
@@ -86,7 +153,8 @@ const elements = {
     adminButton: null, // Will be set in init()
     slideshow: null, // Will be set in init()
     loading: null, // Will be set in init()
-    themeContainer: null // Will be set in init()
+    themeContainer: null, // Will be set in init()
+    fpsCounter: null // Will be created in init()
 };
 
 // Initialize cursor
@@ -105,6 +173,30 @@ function createCursor() {
     // Append to container instead of body so it's visible in fullscreen
     document.getElementById('container').appendChild(cursor);
     return cursor;
+}
+
+/**
+ * Create and style the FPS counter element
+ * @returns {HTMLElement} The FPS counter element
+ */
+function createFpsCounter() {
+    const fpsCounter = document.createElement('div');
+    fpsCounter.id = 'fps-counter';
+    Object.assign(fpsCounter.style, {
+        position: 'fixed',
+        top: '10px',
+        left: '10px',
+        padding: '5px 10px',
+        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+        color: '#0f0',
+        fontFamily: 'monospace',
+        fontSize: '16px',
+        borderRadius: '5px',
+        zIndex: '10001', // Higher than cursor
+        display: 'none' // Initially hidden
+    });
+    document.getElementById('container').appendChild(fpsCounter);
+    return fpsCounter;
 }
 
 // Event Listeners
@@ -222,13 +314,8 @@ function handleContentUpdate(data) {
 
     state.globalSettings = data.globalSettings || {};
     
-    // Apply low performance mode styling if enabled
-    const container = document.getElementById('container');
-    if (state.globalSettings.lowPerformanceMode) {
-        container.classList.add('low-performance');
-    } else {
-        container.classList.remove('low-performance');
-    }
+    // Apply performance mode styling based on individual settings
+    applyPerformanceSettings();
     
     if (fontSettingsChanged(oldFontSettings)) {
         updateSlides(data.slides || []);
@@ -378,13 +465,32 @@ function createSlideElement(slide, index) {
     if (imgEl) {
         imgEl._originalUrl = slide.image;
         
-        // Apply low performance mode if enabled in settings
-        if (state.globalSettings.lowPerformanceMode) {
+        // Apply low quality images if enabled in settings
+        const performance = state.globalSettings.performance || {};
+        let shouldUseLowQuality = false;
+        
+        // If we have new performance settings, use them
+        if (state.globalSettings.performance) {
+            shouldUseLowQuality = performance.forceLowQualityImages;
+        } else {
+            // Fallback to legacy mode only if no new performance settings
+            shouldUseLowQuality = state.globalSettings.lowPerformanceMode;
+        }
+        
+        console.log(`🎯 Slide ${slide.text}: shouldUseLowQuality = ${shouldUseLowQuality}`, performance);
+        
+        if (shouldUseLowQuality) {
+            console.log(`🔄 Processing image for slide: ${slide.text}`);
             imgQualityManager.getImageUrl(slide.image, true).then(lowQualityUrl => {
+                console.log(`✨ Applied low quality to slide ${slide.text}:`, lowQualityUrl.substring(0, 50) + '...');
                 if (imgEl.src !== lowQualityUrl) {
                     imgEl.src = lowQualityUrl;
                 }
+            }).catch(error => {
+                console.error(`❌ Failed to process image for slide ${slide.text}:`, error);
             });
+        } else {
+            console.log(`✅ Using original quality for slide: ${slide.text}`);
         }
     }
     
@@ -489,53 +595,62 @@ document.head.appendChild(styleSheet);
 
 // Initialization
 function init() {
-    // Initialize DOM elements
-    elements.cursor = createCursor();
+    // DOM element references
     elements.adminButton = document.getElementById('admin-button');
     elements.slideshow = document.getElementById('slideshow');
     elements.loading = document.getElementById('loading');
     elements.themeContainer = document.getElementById('theme-container');
-    
-    // Initialize performance and image quality modules
+    elements.cursor = createCursor();
+    elements.fpsCounter = createFpsCounter();
+
+    // Initialize performance monitoring
     perfMonitor = new PerformanceMonitor();
-    imgQualityManager = new ImageQualityManager();
+    perfMonitor.onLowFPS(updateFpsDisplay);
+    perfMonitor.onHighFPS(updateFpsDisplay);
     perfMonitor.start();
-    perfMonitor.onLowFPS(fps => {
-        console.warn('Low FPS detected:', fps);
-        // Don't force low quality if global setting already enforces it
-        if (!state.globalSettings.lowPerformanceMode) {
-            updateImageQuality(true);
-        }
-    });
-    perfMonitor.onHighFPS(fps => {
-        console.info('High FPS restored:', fps);
-        // Only restore high quality if global setting allows it
-        if (!state.globalSettings.lowPerformanceMode) {
-            updateImageQuality(false);
-        }
-    });
-    
-    const themeScript = document.createElement('script');
-    themeScript.src = 'themes.js';
-    
-    // Wait for themes.js to load before starting
-    themeScript.onload = () => {
-        console.log('Themes loaded successfully');
-        initializeEventListeners();
-        loadContent();
-        setInterval(loadContent, DEFAULTS.SLIDE_CHECK_INTERVAL);
-    };
-    
-    // Fallback in case themes.js fails to load
-    themeScript.onerror = () => {
-        console.warn('Failed to load themes.js, continuing without themes');
-        initializeEventListeners();
-        loadContent();
-        setInterval(loadContent, DEFAULTS.SLIDE_CHECK_INTERVAL);
-    };
-    
-    document.head.appendChild(themeScript);
+
+    // Initialize image quality manager
+    imgQualityManager = new ImageQualityManager();
+
+    // Set up event listeners
+    initializeEventListeners();
+
+    // Initial content load
+    loadContent();
+
+    // Set up periodic check for content updates
+    setInterval(loadContent, DEFAULTS.SLIDE_CHECK_INTERVAL);
 }
+
+/**
+ * Updates the FPS counter display
+ * @param {number} fps - The current frames per second
+ */
+function updateFpsDisplay(fps) {
+    if (elements.fpsCounter) {
+        elements.fpsCounter.textContent = `FPS: ${Math.round(fps)}`;
+    }
+}
+
+// Global debugging helper for console
+window.KioskDebug = {
+    getState: () => state,
+    getElements: () => elements,
+    getImgQualityManager: () => imgQualityManager,
+    getPerfMonitor: () => perfMonitor,
+    testImageQuality: async (url, forceLow = true) => {
+        console.log(`Testing image quality for: ${url}`);
+        console.log(`Force low quality: ${forceLow}`);
+        const result = await imgQualityManager.getImageUrl(url, forceLow);
+        console.log(`Result URL (first 100 chars): ${result.substring(0, 100)}...`);
+        return result;
+    },
+    updateAllImageQuality: async (forceLow = true) => {
+        console.log(`Updating all images with forceLow: ${forceLow}`);
+        await updateImageQuality(forceLow);
+        console.log('All images updated');
+    }
+};
 
 window.onload = init;
 // Expose functions for inline handlers

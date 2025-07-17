@@ -294,7 +294,38 @@ body {
 .watermark.bottom-left { bottom: 20px; left: 20px; }
 .watermark.bottom-right { bottom: 20px; right: 20px; }
 
-/* Low Performance Mode - Reduce animations and effects */
+/* Performance Mode Controls - Individual toggles */
+
+/* Disable Animations */
+.perf-no-animations .slide-title,
+.perf-no-animations .slide-description,
+.perf-no-animations .slide-image {
+    animation: none !important;
+    opacity: 1 !important;
+}
+
+/* Fast Transitions */
+.perf-fast-transitions .slide {
+    transition: opacity 0.3s ease !important;
+}
+
+/* Disable Image Effects */
+.perf-no-image-effects .slide img {
+    filter: none !important;
+    box-shadow: none !important;
+}
+
+/* Disable Themes */
+.perf-no-themes #theme-container {
+    display: none !important;
+}
+
+/* Disable Cursor Trails */
+.perf-no-cursor-trails .trail {
+    display: none !important;
+}
+
+/* Legacy Low Performance Mode - applies all optimizations */
 .low-performance .slide-title,
 .low-performance .slide-description,
 .low-performance .slide-image {

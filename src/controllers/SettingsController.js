@@ -28,6 +28,11 @@ class SettingsController {
       const kioskData = await FileService.readKioskData();
       const newSettings = { ...kioskData.globalSettings, ...req.body };
       
+      // Clean up legacy settings when new performance settings are provided
+      if (req.body.performance) {
+        delete newSettings.lowPerformanceMode;
+      }
+      
       // Validate settings
       const validationResult = SettingsController.validateGlobalSettings(newSettings);
       if (!validationResult.isValid) {

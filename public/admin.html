@@ -63,61 +63,120 @@
             </div>
         </div>
         <div class="performance-settings">
-            <h3>Performance Settings</h3>
-            <div class="performance-control">
-                <label for="low-performance-mode">Force Low Performance Mode:</label>
-                <input type="checkbox" id="low-performance-mode">
-                <p class="setting-help">Forces reduced image quality and simplified animations for better performance on low-end hardware.</p>
+            <div class="performance-header" id="performance-header">
+                <h3>Paramètres de Performance</h3>
+                <span class="collapse-arrow collapsed" id="performance-arrow">▶</span>
+            </div>
+            <div class="performance-drawer collapsed" id="performance-drawer">
+                <div class="performance-control">
+                    <label for="force-low-quality-images">
+                        <input type="checkbox" id="force-low-quality-images">
+                        Forcer les images de faible qualité
+                    </label>
+                    <p class="setting-help">Réduit la qualité des images pour améliorer les temps de chargement et l'utilisation de la mémoire.</p>
+                </div>
+                <div class="performance-control">
+                    <label for="disable-animations">
+                        <input type="checkbox" id="disable-animations">
+                        Désactiver les animations de diapositives
+                    </label>
+                    <p class="setting-help">Supprime les animations d'apparition pour des transitions plus rapides.</p>
+                </div>
+                <div class="performance-control">
+                    <label for="disable-themes">
+                        <input type="checkbox" id="disable-themes">
+                        Désactiver les effets de thème
+                    </label>
+                    <p class="setting-help">Masque les arrière-plans et éléments décoratifs des thèmes.</p>
+                </div>
+                <div class="performance-control">
+                    <label for="disable-image-effects">
+                        <input type="checkbox" id="disable-image-effects">
+                        Désactiver les effets d'image
+                    </label>
+                    <p class="setting-help">Supprime les ombres portées et filtres des images.</p>
+                </div>
+                <div class="performance-control">
+                    <label for="disable-cursor-trails">
+                        <input type="checkbox" id="disable-cursor-trails">
+                        Désactiver les effets de curseur
+                    </label>
+                    <p class="setting-help">Masque les traînées de curseur et autres effets visuels interactifs.</p>
+                </div>
+                <div class="performance-control">
+                    <label for="fast-transitions">
+                        <input type="checkbox" id="fast-transitions">
+                        Utiliser des transitions rapides
+                    </label>
+                    <p class="setting-help">Réduit la durée des transitions pour une sensation plus réactive.</p>
+                </div>
+                <div class="performance-control">
+                    <label for="show-fps-counter">
+                        <input type="checkbox" id="show-fps-counter">
+                        Afficher le compteur FPS
+                    </label>
+                    <p class="setting-help">Affiche un compteur d'images par seconde (FPS) en superposition pour le débogage des performances.</p>
+                </div>
             </div>
         </div>
 <div class="watermark-settings">
-    <h3>Paramètres du filigrane</h3>
-    <div class="watermark-control">
-        <label for="watermark-enabled">Activer le filigrane:</label>
-        <input type="checkbox" id="watermark-enabled">
+    <div class="drawer-header" id="watermark-header">
+        <h3>Paramètres du filigrane</h3>
+        <span class="collapse-arrow collapsed" id="watermark-arrow">▶</span>
     </div>
-    <div class="watermark-upload">
-        <label for="watermarkUpload">Image du filigrane:</label>
-        <input type="file" id="watermarkUpload" accept="image/*">
-        <div id="current-watermark" class="current-watermark">
-            <img src="" alt="Current watermark" style="display: none;">
-            <span class="no-watermark">Aucune image</span>
+    <div class="drawer-content collapsed" id="watermark-drawer">
+        <div class="watermark-control">
+            <label for="watermark-enabled">Activer le filigrane :</label>
+            <input type="checkbox" id="watermark-enabled">
         </div>
-    </div>
-    <div class="watermark-control">
-        <label for="watermark-position">Position:</label>
-        <select id="watermark-position">
-            <option value="top-left">Haut Gauche</option>
-            <option value="top-right">Haut Droite</option>
-            <option value="bottom-left">Bas Gauche</option>
-            <option value="bottom-right">Bas Droite</option>
-        </select>
-    </div>
-    <div class="watermark-control">
-        <label for="watermark-size">Taille:</label>
-        <input type="range" id="watermark-size" min="20" max="200" value="100">
-        <span id="watermark-size-display">100px</span>
-    </div>
-    <div class="watermark-control">
-        <label for="watermark-opacity">Opacité:</label>
-        <input type="range" id="watermark-opacity" min="1" max="100" value="50">
-        <span id="watermark-opacity-display">50%</span>
+        <div class="watermark-upload">
+            <label for="watermarkUpload">Image du filigrane :</label>
+            <input type="file" id="watermarkUpload" accept="image/*">
+            <div id="current-watermark" class="current-watermark">
+                <img src="" alt="Filigrane actuel" style="display: none;">
+                <span class="no-watermark">Aucune image</span>
+            </div>
+        </div>
+        <div class="watermark-control">
+            <label for="watermark-position">Position :</label>
+            <select id="watermark-position">
+                <option value="top-left">Haut Gauche</option>
+                <option value="top-right">Haut Droite</option>
+                <option value="bottom-left">Bas Gauche</option>
+                <option value="bottom-right">Bas Droite</option>
+            </select>
+        </div>
+        <div class="watermark-control">
+            <label for="watermark-size">Taille :</label>
+            <input type="range" id="watermark-size" min="20" max="200" value="100">
+            <span id="watermark-size-display">100px</span>
+        </div>
+        <div class="watermark-control">
+            <label for="watermark-opacity">Opacité :</label>
+            <input type="range" id="watermark-opacity" min="1" max="100" value="50">
+            <span id="watermark-opacity-display">50%</span>
+        </div>
     </div>
 </div>
 <div class="config-io-settings">
-    <h3>Configuration Import/Export</h3>
-    <div class="config-buttons">
-        <button id="export-config" class="config-btn">
-            Export Configuration
-        </button>
-        <div class="import-wrapper">
-            <input type="file" id="import-config-input" accept=".json" style="display: none;">
-            <button id="import-config" class="config-btn">
-                Import Configuration
-            </button>
-        </div>
+    <div class="drawer-header" id="config-header">
+        <h3>Import/Export de Configuration</h3>
+        <span class="collapse-arrow collapsed" id="config-arrow">▶</span>
     </div>
-    <p class="config-help">Export your current kiosk configuration or import a previously saved one.</p>
+    <div class="drawer-content collapsed" id="config-drawer">
+        <div class="config-buttons">
+            <button id="export-config" class="config-btn">
+                Exporter la Configuration
+            </button>
+            <div class="import-wrapper">
+                <input type="file" id="import-config-input" accept=".json" style="display: none;">
+                <button id="import-config" class="config-btn">
+                    Importer la Configuration
+                </button>
+            </div>
+        </div>
+        <p class="config-help">Exportez votre configuration actuelle du kiosque ou importez une configuration précédemment sauvegardée.</p>
+    </div>
 </div>
         <div class="button-container">
             <button id="save-global-settings">Sauvegarder</button>

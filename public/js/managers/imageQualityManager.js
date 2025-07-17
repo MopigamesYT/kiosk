@@ -84,11 +84,15 @@ export class ImageQualityManager {
         const actualQuality = quality !== null ? quality : this.lowQuality;
         const cacheKey = `${originalUrl}_quality_${actualQuality}`;
         
+        console.log(`🎨 Creating reduced quality version: quality=${actualQuality}`);
+        
         if (this.processedImages.has(cacheKey)) {
+            console.log(`📦 Using cached version for: ${originalUrl}`);
             return this.processedImages.get(cacheKey);
         }
 
         try {
+            console.log(`📥 Loading original image: ${originalUrl}`);
             // Load the original image
             const img = new Image();
             img.crossOrigin = 'anonymous';
@@ -100,6 +104,8 @@ export class ImageQualityManager {
             
             img.src = originalUrl;
             await loadPromise;
+            
+            console.log(`📐 Original dimensions: ${img.width}x${img.height}`);
 
             // Create canvas with original dimensions
             const canvas = document.createElement('canvas');
@@ -110,23 +116,50 @@ export class ImageQualityManager {
             canvas.height = img.height;
             ctx.drawImage(img, 0, 0, img.width, img.height);
 
-            // Convert to compressed data URL - reduce quality only, not size
+            // Convert to compressed data URL using WebP for best compression + transparency
             let compressedDataUrl;
-            if (this.hasTransparency(ctx, canvas.width, canvas.height)) {
-                // Use PNG for images with transparency (can't compress PNG quality much)
-                compressedDataUrl = canvas.toDataURL('image/png');
+            
+            // Try WebP first (best compression + transparency support)
+            if (this.supportsWebP()) {
+                if (this.hasTransparency(ctx, canvas.width, canvas.height)) {
+                    console.log(`🎭✨ Image has transparency, using WebP with quality ${actualQuality} (keeps transparency!)`);
+                } else {
+                    console.log(`📷✨ Image is opaque, using WebP with quality ${actualQuality}`);
+                }
+                compressedDataUrl = canvas.toDataURL('image/webp', actualQuality);
             } else {
-                // Use JPEG with reduced quality for opaque images
-                compressedDataUrl = canvas.toDataURL('image/jpeg', actualQuality);
+                // Fallback for browsers that don't support WebP
+                if (this.hasTransparency(ctx, canvas.width, canvas.height)) {
+                    console.log(`🎭⚠️ WebP not supported, using PNG (no compression)`);
+                    compressedDataUrl = canvas.toDataURL('image/png');
+                } else {
+                    console.log(`📷⚠️ WebP not supported, using JPEG with quality ${actualQuality}`);
+                    compressedDataUrl = canvas.toDataURL('image/jpeg', actualQuality);
+                }
             }
+            
+            console.log(`💾 Compressed size: ${Math.round(compressedDataUrl.length / 1024)}KB`);
             
             // Cache the result
             this.processedImages.set(cacheKey, compressedDataUrl);
             
             return compressedDataUrl;
         } catch (error) {
-            console.warn('Failed to create reduced quality version:', error);
+            console.warn('❌ Failed to create reduced quality version:', error);
             return originalUrl; // Fallback to original
+        }
+    }
+
+    // Check if browser supports WebP format
+    supportsWebP() {
+        try {
+            const canvas = document.createElement('canvas');
+            canvas.width = 1;
+            canvas.height = 1;
+            const dataURL = canvas.toDataURL('image/webp');
+            return dataURL.indexOf('data:image/webp') === 0;
+        } catch (error) {
+            return false;
         }
     }
 
@@ -151,11 +184,17 @@ export class ImageQualityManager {
     }
     // Get appropriate image URL based on performance state
     async getImageUrl(originalUrl, isLowPerformance) {
+        console.log(`🖼️ ImageQualityManager: Processing ${originalUrl}, lowPerf: ${isLowPerformance}`);
+        
         if (!isLowPerformance) {
+            console.log(`✅ Using original quality for: ${originalUrl}`);
             return originalUrl; // Use original high-quality image
         }
 
+        console.log(`🔄 Creating reduced quality version for: ${originalUrl}`);
         // Create and return reduced quality version (preserves original dimensions)
-        return await this.createReducedQualityVersion(originalUrl);
+        const reducedQualityUrl = await this.createReducedQualityVersion(originalUrl);
+        console.log(`✨ Reduced quality created:`, reducedQualityUrl.substring(0, 50) + '...');
+        return reducedQualityUrl;
     }
 }

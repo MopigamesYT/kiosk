@@ -35,7 +35,26 @@ export class SettingsManager {
       descriptionSizeDisplay: document.getElementById('description-size-display'),
       
       // Performance controls
-      lowPerformanceMode: document.getElementById('low-performance-mode'),
+      performanceHeader: document.getElementById('performance-header'),
+      performanceArrow: document.getElementById('performance-arrow'),
+      performanceDrawer: document.getElementById('performance-drawer'),
+      forceLowQualityImages: document.getElementById('force-low-quality-images'),
+      disableAnimations: document.getElementById('disable-animations'),
+      disableThemes: document.getElementById('disable-themes'),
+      disableImageEffects: document.getElementById('disable-image-effects'),
+      disableCursorTrails: document.getElementById('disable-cursor-trails'),
+      fastTransitions: document.getElementById('fast-transitions'),
+      showFpsCounter: document.getElementById('show-fps-counter'),
+      
+      // Watermark drawer controls
+      watermarkHeader: document.getElementById('watermark-header'),
+      watermarkArrow: document.getElementById('watermark-arrow'),
+      watermarkDrawer: document.getElementById('watermark-drawer'),
+      
+      // Config drawer controls
+      configHeader: document.getElementById('config-header'),
+      configArrow: document.getElementById('config-arrow'),
+      configDrawer: document.getElementById('config-drawer'),
       
       // Watermark controls
       watermarkEnabled: document.getElementById('watermark-enabled'),
@@ -119,6 +138,9 @@ export class SettingsManager {
 
     // Performance controls
     this.attachPerformanceEventListeners();
+
+    // Drawer controls
+    this.attachDrawerEventListeners();
   }
 
   /**
@@ -143,59 +165,73 @@ export class SettingsManager {
       this.elements.watermarkUpload.addEventListener('change', (e) => this.handleWatermarkUpload(e));
     }
 
-    // Auto-save watermark settings on change
-    const watermarkControls = [
-      this.elements.watermarkEnabled,
-      this.elements.watermarkPosition,
-      this.elements.watermarkSize,
-      this.elements.watermarkOpacity
-    ].filter(Boolean);
-
-    watermarkControls.forEach(control => {
-      control.addEventListener('change', () => this.saveWatermarkSettings());
-      if (control.type === 'range') {
-        control.addEventListener('input', () => this.saveWatermarkSettings());
-      }
-    });
+    // Note: Watermark settings no longer auto-save on change
+    // They will be saved only when the main "Save" button is clicked
   }
 
   /**
    * Attach performance-specific event listeners
    */
   attachPerformanceEventListeners() {
-    // Auto-save performance settings on change
-    if (this.elements.lowPerformanceMode) {
-      this.elements.lowPerformanceMode.addEventListener('change', () => this.savePerformanceSettings());
+    // Collapsible drawer functionality
+    if (this.elements.performanceHeader) {
+      this.elements.performanceHeader.addEventListener('click', () => {
+        this.togglePerformanceDrawer();
+      });
+    }
+
+    // Note: Performance settings are no longer auto-saved
+    // They will be saved only when the main "Save" button is clicked
+  }
+
+  /**
+   * Attach drawer event listeners for collapsible sections
+   */
+  attachDrawerEventListeners() {
+    // Watermark drawer
+    if (this.elements.watermarkHeader) {
+      this.elements.watermarkHeader.addEventListener('click', () => {
+        this.toggleDrawer('watermark');
+      });
+    }
+
+    // Config drawer
+    if (this.elements.configHeader) {
+      this.elements.configHeader.addEventListener('click', () => {
+        this.toggleDrawer('config');
+      });
     }
   }
 
   /**
-   * Save performance settings
+   * Toggle performance drawer visibility
    */
-  async savePerformanceSettings() {
-    try {
-      const settings = {
-        theme: this.elements.kioskThemeSelect?.value || 'default',
-        titleFontSize: parseInt(this.elements.titleFontSize?.value || 48),
-        descriptionFontSize: parseInt(this.elements.descriptionFontSize?.value || 24),
-        lowPerformanceMode: this.elements.lowPerformanceMode?.checked || false,
-        watermark: this.collectWatermarkSettings()
-      };
+  togglePerformanceDrawer() {
+    this.toggleDrawer('performance');
+  }
 
-      const result = await UIHelpers.apiRequest('/global-settings', {
-        method: 'POST',
-        body: JSON.stringify(settings)
-      });
+  /**
+   * Generic method to toggle any drawer
+   * @param {string} drawerType - 'performance', 'watermark', or 'config'
+   */
+  toggleDrawer(drawerType) {
+    const drawerElement = this.elements[`${drawerType}Drawer`];
+    const arrowElement = this.elements[`${drawerType}Arrow`];
+    
+    if (!drawerElement || !arrowElement) return;
 
-      if (result.success) {
-        UIHelpers.showNotification('Performance settings saved', 'success');
-      }
-      
-      return result.success;
-    } catch (error) {
-      console.error('Error saving performance settings:', error);
-      UIHelpers.showNotification('Failed to save performance settings', 'error');
-      return false;
+    const isCollapsed = drawerElement.classList.contains('collapsed');
+    
+    if (isCollapsed) {
+      // Expand
+      drawerElement.classList.remove('collapsed');
+      arrowElement.classList.remove('collapsed');
+      arrowElement.textContent = '▼';
+    } else {
+      // Collapse
+      drawerElement.classList.add('collapsed');
+      arrowElement.classList.add('collapsed');
+      arrowElement.textContent = '▶';
     }
   }
 
@@ -208,7 +244,7 @@ export class SettingsManager {
       this.populateSettingsForm(settings);
     } catch (error) {
       console.error('Error loading global settings:', error);
-      UIHelpers.showNotification('Failed to load settings', 'error');
+      UIHelpers.showNotification('Échec du chargement des paramètres', 'error');
     }
   }
 
@@ -233,8 +269,8 @@ export class SettingsManager {
     }
 
     // Performance settings
-    if (this.elements.lowPerformanceMode) {
-      this.elements.lowPerformanceMode.checked = settings.lowPerformanceMode || false;
+    if (settings.performance) {
+      this.populatePerformanceSettings(settings.performance);
     }
 
     // Watermark settings
@@ -277,6 +313,39 @@ export class SettingsManager {
   }
 
   /**
+   * Populate performance settings
+   * @param {Object} performance - Performance settings
+   */
+  populatePerformanceSettings(performance) {
+    if (this.elements.forceLowQualityImages) {
+      this.elements.forceLowQualityImages.checked = performance.forceLowQualityImages || false;
+    }
+
+    if (this.elements.disableAnimations) {
+      this.elements.disableAnimations.checked = performance.disableAnimations || false;
+    }
+
+    if (this.elements.disableThemes) {
+      this.elements.disableThemes.checked = performance.disableThemes || false;
+    }
+
+    if (this.elements.disableImageEffects) {
+      this.elements.disableImageEffects.checked = performance.disableImageEffects || false;
+    }
+
+    if (this.elements.disableCursorTrails) {
+      this.elements.disableCursorTrails.checked = performance.disableCursorTrails || false;
+    }
+
+    if (this.elements.fastTransitions) {
+      this.elements.fastTransitions.checked = performance.fastTransitions || false;
+    }
+    if (this.elements.showFpsCounter) {
+      this.elements.showFpsCounter.checked = performance.showFpsCounter || false;
+    }
+  }
+
+  /**
    * Show global settings modal
    */
   showGlobalSettings() {
@@ -300,7 +369,9 @@ export class SettingsManager {
         theme: this.elements.kioskThemeSelect?.value || 'default',
         titleFontSize: parseInt(this.elements.titleFontSize?.value || 48),
         descriptionFontSize: parseInt(this.elements.descriptionFontSize?.value || 24),
-        lowPerformanceMode: this.elements.lowPerformanceMode?.checked || false
+        performance: this.collectPerformanceSettings()
+        // Note: We explicitly don't include lowPerformanceMode here
+        // to avoid conflicts with the new granular settings
       };
 
       // Add watermark settings if they exist
@@ -316,11 +387,11 @@ export class SettingsManager {
 
       if (result.success) {
         this.hideGlobalSettings();
-        UIHelpers.showNotification('Settings saved successfully', 'success');
+        UIHelpers.showNotification('Paramètres sauvegardés avec succès', 'success');
       }
     } catch (error) {
       console.error('Error saving global settings:', error);
-      UIHelpers.showNotification('Failed to save settings', 'error');
+      UIHelpers.showNotification('Échec de la sauvegarde des paramètres', 'error');
     }
   }
 
@@ -348,11 +419,11 @@ export class SettingsManager {
 
         // Save watermark settings with new image
         await this.saveWatermarkSettings(result.imagePath);
-        UIHelpers.showNotification('Watermark uploaded successfully', 'success');
+        UIHelpers.showNotification('Filigrane téléchargé avec succès', 'success');
       }
     } catch (error) {
       console.error('Error uploading watermark:', error);
-      UIHelpers.showNotification('Failed to upload watermark', 'error');
+      UIHelpers.showNotification('Échec du téléchargement du filigrane', 'error');
     }
   }
 
@@ -366,9 +437,19 @@ export class SettingsManager {
         theme: this.elements.kioskThemeSelect?.value || 'default',
         titleFontSize: parseInt(this.elements.titleFontSize?.value || 48),
         descriptionFontSize: parseInt(this.elements.descriptionFontSize?.value || 24),
-        lowPerformanceMode: this.elements.lowPerformanceMode?.checked || false,
         watermark: this.collectWatermarkSettings(imagePath)
       };
+
+      // Only include performance settings if they exist in current settings
+      try {
+        const currentSettings = await UIHelpers.apiRequest('/global-settings');
+        if (currentSettings.performance) {
+          settings.performance = currentSettings.performance;
+        }
+      } catch (error) {
+        // If we can't get current settings, just proceed without performance
+        console.warn('Could not fetch current performance settings:', error);
+      }
 
       const result = await UIHelpers.apiRequest('/global-settings', {
         method: 'POST',
@@ -402,6 +483,22 @@ export class SettingsManager {
     }
 
     return settings;
+  }
+
+  /**
+   * Collect performance settings from form
+   * @returns {Object} Performance settings
+   */
+  collectPerformanceSettings() {
+    return {
+      forceLowQualityImages: this.elements.forceLowQualityImages?.checked || false,
+      disableAnimations: this.elements.disableAnimations?.checked || false,
+      disableThemes: this.elements.disableThemes?.checked || false,
+      disableImageEffects: this.elements.disableImageEffects?.checked || false,
+      disableCursorTrails: this.elements.disableCursorTrails?.checked || false,
+      fastTransitions: this.elements.fastTransitions?.checked || false,
+      showFpsCounter: this.elements.showFpsCounter?.checked || false
+    };
   }
 
   /**
