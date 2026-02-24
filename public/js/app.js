@@ -6,6 +6,7 @@ import { KioskManager } from './managers/KioskManager.js';
 import { DragDropManager } from './managers/DragDropManager.js';
 import { SettingsManager } from './managers/SettingsManager.js';
 import { ImportExportManager } from './managers/ImportExportManager.js';
+import { ThemeManager } from './managers/ThemeManager.js';
 
 class AdminApplication {
   constructor() {
@@ -26,6 +27,10 @@ class AdminApplication {
         this.managers.kiosk, 
         this.managers.settings
       );
+      this.managers.theme = new ThemeManager(this.managers.settings);
+
+      // Make theme manager globally available for inline event handlers
+      window.themeManager = this.managers.theme;
 
       // Initialize theme
       this.managers.settings.initializeTheme();

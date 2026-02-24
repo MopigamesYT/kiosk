@@ -7,6 +7,8 @@ import { getThemeRegistry } from '../constants/themeConstants.js';
 
 export class SettingsManager {
   constructor() {
+    // Track current theme selection
+    this.currentTheme = 'default';
     this.initializeElements();
     this.populateThemeOptions();
     this.attachEventListeners();
@@ -29,6 +31,10 @@ export class SettingsManager {
       
       // Settings controls
       kioskThemeSelect: document.getElementById('kiosk-theme'),
+      // New theme selector elements
+      currentThemeName: document.getElementById('current-theme-name'),
+      openThemeSelectorBtn: document.getElementById('open-theme-selector-btn'),
+
       titleFontSize: document.getElementById('title-font-size'),
       descriptionFontSize: document.getElementById('description-font-size'),
       titleSizeDisplay: document.getElementById('title-size-display'),
@@ -253,9 +259,17 @@ export class SettingsManager {
    * @param {Object} settings - Settings data
    */
   populateSettingsForm(settings) {
-    // Theme and font settings
-    if (this.elements.kioskThemeSelect) {
-      this.elements.kioskThemeSelect.value = settings.theme || 'default';
+    // Theme settings: update currentTheme and display
+    this.currentTheme = settings.theme || 'default';
+    // Update display in Settings modal
+    const displayName = settings.theme || 'default';
+    if (this.elements.currentThemeName) {
+      this.elements.currentThemeName.textContent = displayName;
+    }
+    // Update ThemeManager display
+    const themeManager = window.AdminApp?.getInstance()?.managers?.theme;
+    if (themeManager) {
+      themeManager.setCurrentTheme(this.currentTheme);
     }
 
     if (this.elements.titleFontSize) {
@@ -365,20 +379,16 @@ export class SettingsManager {
    */
   async saveGlobalSettings() {
     try {
-      const settings = {
-        theme: this.elements.kioskThemeSelect?.value || 'default',
-        titleFontSize: parseInt(this.elements.titleFontSize?.value || 48),
-        descriptionFontSize: parseInt(this.elements.descriptionFontSize?.value || 24),
-        performance: this.collectPerformanceSettings()
-        // Note: We explicitly don't include lowPerformanceMode here
-        // to avoid conflicts with the new granular settings
-      };
-
-      // Add watermark settings if they exist
       const watermarkSettings = this.collectWatermarkSettings();
-      if (watermarkSettings) {
-        settings.watermark = watermarkSettings;
-      }
+      const performanceSettings = this.collectPerformanceSettings();
+
+      const settings = {
+        theme: this.currentTheme || 'default',
+        titleFontSize: parseInt(this.elements.titleFontSize.value),
+        descriptionFontSize: parseInt(this.elements.descriptionFontSize.value),
+        watermark: watermarkSettings,
+        performance: performanceSettings
+      };
 
       const result = await UIHelpers.apiRequest('/global-settings', {
         method: 'POST',
@@ -387,11 +397,11 @@ export class SettingsManager {
 
       if (result.success) {
         this.hideGlobalSettings();
-        UIHelpers.showNotification('Paramètres sauvegardés avec succès', 'success');
+        UIHelpers.showNotification('Paramètres globaux sauvegardés avec succès!', 'success');
       }
     } catch (error) {
-      console.error('Error saving global settings:', error);
-      UIHelpers.showNotification('Échec de la sauvegarde des paramètres', 'error');
+      console.error('Failed to save global settings:', error);
+      UIHelpers.showNotification('Erreur lors de la sauvegarde des paramètres globaux.', 'error');
     }
   }
 
@@ -434,7 +444,7 @@ export class SettingsManager {
   async saveWatermarkSettings(imagePath = null) {
     try {
       const settings = {
-        theme: this.elements.kioskThemeSelect?.value || 'default',
+        theme: this.currentTheme || 'default',
         titleFontSize: parseInt(this.elements.titleFontSize?.value || 48),
         descriptionFontSize: parseInt(this.elements.descriptionFontSize?.value || 24),
         watermark: this.collectWatermarkSettings(imagePath)
@@ -499,6 +509,21 @@ export class SettingsManager {
       fastTransitions: this.elements.fastTransitions?.checked || false,
       showFpsCounter: this.elements.showFpsCounter?.checked || false
     };
+  }
+
+  /**
+   * Updates the currently selected theme ID.
+   * Called by ThemeManager.
+   * @param {string} themeId 
+   */
+  updateCurrentTheme(themeId) {
+    // This method is a bridge so SettingsManager knows about the theme selected in ThemeManager
+    // The actual selectedTheme is managed by ThemeManager.
+    // Sync currentTheme and display
+    this.currentTheme = themeId;
+    if (this.elements.currentThemeName) {
+      this.elements.currentThemeName.textContent = themeId;
+    }
   }
 
   /**

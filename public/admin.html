@@ -5,7 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AdminKiosk</title>
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="theme-editor.css">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    <!-- CodeMirror CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/theme/dracula.min.css">
 </head>
 <body>
     <header>
@@ -45,10 +49,11 @@
     <div class="modal-content">
         <h2>Paramètres globaux du kiosque</h2>
         <div>
-            <label for="kiosk-theme">Thème du kiosque:</label>
-            <select id="kiosk-theme">
-                <!-- Options will be dynamically populated -->
-            </select>
+            <label for="kiosk-theme-selector">Thème du kiosque:</label>
+            <div class="theme-selector-control">
+                <span id="current-theme-name">Default</span>
+                <button id="open-theme-selector-btn">Choisir un thème</button>
+            </div>
         </div>
         <div class="font-size-controls">
             <div class="font-control">
@@ -184,6 +189,118 @@
         </div>
     </div>
 </div>
+
+<!-- Theme Selector Modal -->
+<div id="theme-selector-modal" class="modal large">
+    <div class="modal-content">
+        <header class="modal-header">
+            <h2>Sélecteur de Thèmes</h2>
+            <button id="close-theme-selector-btn" class="close-button">&times;</button>
+        </header>
+        <div class="theme-selector-body">
+            <aside class="theme-sidebar">
+                <h3>Catégories</h3>
+                <ul id="theme-categories">
+                    <li class="active" data-category="all">Tous</li>
+                    <li data-category="official">Officiels</li>
+                    <li data-category="community">Communauté</li>
+                    <li data-category="custom">Personnalisés</li>
+                </ul>
+                <button id="open-theme-creator-btn">Créer un Thème</button>
+            </aside>
+            <main id="theme-previews" class="theme-previews-container"></main>
+        </div>
+    </div>
+</div>
+
+<!-- Theme Creator Modal -->
+<div id="theme-creator-modal" class="modal large">
+    <div class="modal-content">
+        <header class="modal-header">
+            <h2 id="theme-creator-title">Créateur de Thème</h2>
+            <button id="close-theme-creator-btn" class="close-button">&times;</button>
+        </header>
+        <div class="theme-creator-body">
+            <aside class="theme-creator-sidebar">
+                <div class="control-group">
+                    <label for="theme-name">Nom du thème:</label>
+                    <input type="text" id="theme-name" placeholder="Mon Super Thème">
+                </div>
+                <div class="control-group">
+                    <label>Mode de création:</label>
+                    <div class="tabs">
+                        <button id="simple-mode-btn" class="tab-button active">Simple</button>
+                        <button id="code-mode-btn" class="tab-button">Code</button>
+                    </div>
+                </div>
+                <!-- Simple Mode Controls -->
+                <div id="simple-mode-controls">
+                    <h4>Éléments Visuels</h4>
+                    <div class="control-group">
+                        <label>Choisir jusqu'à 5 émojis:</label>
+                        <div class="emoji-search">
+                            <input type="text" id="emoji-search" placeholder="Rechercher des émojis... (ex: cat, heart, star)">
+                            <div id="emoji-results" class="emoji-grid"></div>
+                        </div>
+                        <div class="selected-emojis">
+                            <label>Émojis sélectionnés:</label>
+                            <div id="selected-emojis-display" class="selected-emojis-list"></div>
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <label for="animation-type">Animation:</label>
+                        <select id="animation-type">
+                            <option value="none">Aucune</option>
+                            <option value="fall">Chute (comme la neige)</option>
+                            <option value="float">Flotter doucement</option>
+                            <option value="spin">Tourner</option>
+                            <option value="pulse">Pulser</option>
+                            <option value="bounce">Rebondir</option>
+                            <option value="sway">Se balancer</option>
+                            <option value="twinkle">Scintiller</option>
+                            <option value="dance">Danser</option>
+                        </select>
+                    </div>
+                </div>
+                <!-- Code Mode Controls (placeholder) -->
+                <div id="code-mode-controls" style="display: none;">
+                    <p>Éditez le code de votre thème ci-dessous.</p>
+                </div>
+                <div class="theme-creator-actions">
+                    <button id="save-theme-btn">Sauvegarder le Thème</button>
+                    <button id="cancel-theme-creation-btn">Annuler</button>
+                </div>
+            </aside>
+            <main class="theme-creator-main">
+                <div class="live-preview-container">
+                    <h4>Aperçu en direct</h4>
+                    <div id="theme-live-preview" class="theme-live-preview"></div>
+                </div>
+                <div id="code-editor-container" style="display: none;">
+                    <div class="code-editor">
+                        <label for="html-editor">HTML</label>
+                        <textarea id="html-editor"></textarea>
+                    </div>
+                    <div class="code-editor">
+                        <label for="css-editor">CSS</label>
+                        <textarea id="css-editor"></textarea>
+                    </div>
+                    <div class="code-editor">
+                        <label for="js-editor">JavaScript</label>
+                        <textarea id="js-editor"></textarea>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+</div>
+
+
+    <!-- CodeMirror JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/mode/xml/xml.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/mode/css/css.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/mode/javascript/javascript.min.js"></script>
 
     <script src="themes.js"></script>
     <script type="module" src="js/app.js"></script>

@@ -1,0 +1,513 @@
+/* Theme Selector & Creator Styles */
+
+/* Inherit modal styles from styles.css */
+#theme-selector-modal .modal-content,
+#theme-creator-modal .modal-content {
+    max-width: 90vw;
+    width: 1200px;
+    height: 80vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 1rem;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid var(--card-border);
+}
+
+.modal-header h2 {
+    margin: 0;
+    color: var(--accent-color);
+}
+
+.close-button {
+    background: none;
+    border: none;
+    font-size: 2rem;
+    line-height: 1;
+    cursor: pointer;
+    color: var(--text-color);
+    opacity: 0.7;
+    transition: opacity 0.2s;
+}
+
+.close-button:hover {
+    opacity: 1;
+}
+
+/* Theme Selector */
+.theme-selector-control {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 20px;
+}
+
+#current-theme-name {
+    font-weight: bold;
+    font-size: 1.1rem;
+    padding: 8px;
+    background-color: var(--bg-color);
+    border: 1px solid var(--card-border);
+    border-radius: 5px;
+}
+
+#open-theme-selector-btn,
+#open-theme-creator-btn {
+    background-color: var(--info-bg);
+    color: var(--button-text);
+    border: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background-color 0.3s ease;
+}
+
+#open-theme-selector-btn:hover,
+#open-theme-creator-btn:hover {
+    background-color: var(--info-hover);
+}
+
+.theme-selector-body,
+.theme-creator-body {
+    display: flex;
+    flex-grow: 1;
+    gap: 1rem;
+    overflow: hidden;
+}
+
+.theme-sidebar,
+.theme-creator-sidebar {
+    width: 220px;
+    flex-shrink: 0;
+    padding-right: 1rem;
+    border-right: 1px solid var(--card-border);
+    display: flex;
+    flex-direction: column;
+}
+
+.theme-sidebar h3 {
+    margin-top: 0;
+    color: var(--accent-color);
+}
+
+.theme-sidebar ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    flex-grow: 1;
+}
+
+.theme-sidebar li {
+    padding: 0.75rem;
+    cursor: pointer;
+    border-radius: 5px;
+    margin-bottom: 0.5rem;
+    transition: background-color 0.2s;
+}
+
+.theme-sidebar li:hover {
+    background-color: rgba(128, 128, 128, 0.1);
+}
+
+.theme-sidebar li.active {
+    background-color: var(--accent-color);
+    color: var(--button-text);
+    font-weight: bold;
+}
+
+#open-theme-creator-btn {
+    width: 100%;
+    margin-top: 1rem;
+    background-color: var(--button-bg);
+}
+#open-theme-creator-btn:hover {
+    background-color: var(--button-hover);
+}
+
+.theme-previews-container {
+    flex-grow: 1;
+    padding-left: 1rem;
+    overflow-y: auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, 220px);
+    gap: 1.5rem;
+    align-content: flex-start;
+    justify-content: center;
+    max-height: 100%;
+}
+
+.theme-preview {
+    background-color: var(--card-bg);
+    border: 2px solid var(--card-border);
+    border-radius: 10px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    width: 220px;
+    height: 260px; /* Increased height to accommodate buttons */
+    display: flex;
+    flex-direction: column;
+}
+
+.theme-preview:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+}
+
+.theme-preview.selected {
+    border-color: var(--accent-color);
+    box-shadow: 0 0 15px rgba(0, 123, 255, 0.4);
+}
+.dark-theme .theme-preview.selected {
+    box-shadow: 0 0 15px var(--accent-color);
+}
+
+
+.theme-preview-visual {
+    height: 120px; /* Reduced from 140px to make room for buttons */
+    background-color: var(--bg-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+    border-bottom: 1px solid var(--card-border);
+    flex-shrink: 0;
+    position: relative;
+    overflow: hidden;
+}
+
+.preview-loading {
+    color: var(--text-color);
+    font-size: 0.8rem;
+    opacity: 0.7;
+}
+
+.preview-fallback {
+    font-size: 3rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+}
+
+.theme-preview-info {
+    padding: 0.75rem; /* Reduced padding */
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between; /* Changed to space-between for better distribution */
+    min-height: 0;
+}
+
+.theme-preview-info h4 {
+    margin: 0 0 0.2rem 0; /* Reduced bottom margin */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--accent-color);
+    font-size: 0.9rem; /* Slightly smaller font */
+}
+
+.theme-preview-info p {
+    margin: 0;
+    font-size: 0.75rem; /* Slightly smaller font */
+    color: var(--text-color);
+    opacity: 0.7;
+    text-transform: capitalize;
+}
+
+/* Theme Action Buttons */
+.theme-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.4rem;
+    margin-top: 0.5rem;
+    padding-top: 0.4rem;
+    border-top: 1px solid var(--card-border);
+    flex-shrink: 0; /* Prevent shrinking */
+}
+
+.theme-actions .edit-btn,
+.theme-actions .delete-btn {
+    border: none;
+    padding: 4px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.7rem;
+    transition: all 0.2s ease;
+    min-width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+
+.theme-actions .edit-btn {
+    background-color: var(--info-bg);
+    color: var(--button-text);
+}
+
+.theme-actions .edit-btn:hover {
+    background-color: var(--info-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.theme-actions .delete-btn {
+    background-color: var(--danger-bg);
+    color: var(--button-text);
+}
+
+.theme-actions .delete-btn:hover {
+    background-color: var(--danger-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+/* Remove the conditional styling - no longer needed */
+
+/* Theme Creator */
+.theme-creator-sidebar {
+    width: 320px;
+    overflow-y: auto;
+}
+
+.control-group {
+    margin-bottom: 1.5rem;
+}
+
+.control-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: bold;
+}
+
+.tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.tab-button {
+    flex-grow: 1;
+    padding: 10px;
+    border: 1px solid var(--card-border);
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.2s, border-color 0.2s;
+}
+
+.tab-button.active {
+    background-color: var(--accent-color);
+    border-color: var(--accent-color);
+    color: var(--button-text);
+    font-weight: bold;
+}
+
+.emoji-selector {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.emoji-selector span {
+    font-size: 2rem;
+    padding: 0.5rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    background-color: var(--bg-color);
+    border: 1px solid var(--card-border);
+}
+
+.emoji-selector span:hover, .emoji-selector span.selected {
+    background-color: var(--accent-color);
+    color: var(--button-text);
+}
+
+.emoji-search {
+    margin-bottom: 1rem;
+}
+
+.emoji-search input {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid var(--card-border);
+    border-radius: 4px;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    margin-bottom: 0.5rem;
+}
+
+.emoji-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
+    gap: 0.25rem;
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid var(--card-border);
+    border-radius: 4px;
+    padding: 0.5rem;
+    background-color: var(--bg-color);
+}
+
+.emoji-grid span {
+    font-size: 1.5rem;
+    padding: 0.25rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    text-align: center;
+}
+
+.emoji-grid span:hover {
+    background-color: var(--accent-color);
+}
+
+.selected-emojis {
+    margin-top: 1rem;
+}
+
+.selected-emojis-list {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    min-height: 60px;
+    padding: 0.5rem;
+    border: 1px dashed var(--card-border);
+    border-radius: 4px;
+    background-color: var(--bg-color);
+    align-items: center;
+}
+
+.selected-emoji {
+    font-size: 2rem;
+    padding: 0.5rem;
+    background-color: var(--accent-color);
+    color: var(--button-text);
+    border-radius: 8px;
+    position: relative;
+    cursor: pointer;
+}
+
+.selected-emoji .remove-emoji {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: var(--danger-bg);
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.emoji-placeholder {
+    color: var(--text-color);
+    opacity: 0.5;
+    font-style: italic;
+}
+
+.theme-creator-actions {
+    margin-top: 2rem;
+    border-top: 1px solid var(--card-border);
+    padding-top: 1rem;
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+}
+
+.theme-creator-actions button {
+    border: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background-color 0.3s ease;
+}
+
+#save-theme-btn {
+    background-color: var(--button-bg);
+    color: var(--button-text);
+}
+#save-theme-btn:hover {
+    background-color: var(--button-hover);
+}
+
+#cancel-theme-creation-btn {
+    background-color: var(--danger-bg);
+    color: var(--button-text);
+}
+#cancel-theme-creation-btn:hover {
+    background-color: var(--danger-hover);
+}
+
+
+.theme-creator-main {
+    flex-grow: 1;
+    padding-left: 1rem;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.live-preview-container {
+    margin-bottom: 1rem;
+}
+
+.live-preview-container h4 {
+    color: var(--accent-color);
+}
+
+.theme-live-preview {
+    height: 250px;
+    background-color: var(--bg-color);
+    border: 1px solid var(--card-border);
+    border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#code-editor-container {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.code-editor {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 100px; /* Ensure it doesn't collapse */
+}
+
+.code-editor label {
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+}
+
+.CodeMirror {
+    flex-grow: 1;
+    border: 1px solid var(--card-border);
+    border-radius: 4px;
+    height: auto; /* Let flexbox handle height */
+}

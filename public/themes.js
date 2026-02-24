@@ -3,17 +3,17 @@ const THEME_REGISTRY = {
   default: { name: 'Par défaut', category: 'basic', hasBackground: false },
   christmas: { name: 'Noël', category: 'seasonal', hasBackground: false },
   summer: { name: 'Été', category: 'seasonal', hasBackground: true },
-  halloween: { name: 'Halloween', category: 'seasonal', hasBackground: false },
-  valentine: { name: 'Saint-Valentin', category: 'seasonal', hasBackground: false },
-  easter: { name: 'Pâques', category: 'seasonal', hasBackground: false },
-  space: { name: 'Espace', category: 'environment', hasBackground: true },
-  ocean: { name: 'Océan', category: 'environment', hasBackground: true },
-  neon: { name: 'Néon', category: 'artistic', hasBackground: true },
-  forest: { name: 'Forêt', category: 'environment', hasBackground: true },
-  cyberpunk: { name: 'Cyberpunk', category: 'artistic', hasBackground: true },
-  retro: { name: 'Rétro', category: 'artistic', hasBackground: true },
-  galaxy: { name: 'Galaxie', category: 'environment', hasBackground: true },
-  desert: { name: 'Désert', category: 'environment', hasBackground: true }
+  halloween: { name: 'Halloween', category: 'seasonal', hasBackground: false, previewIcon: '🎃' },
+  valentine: { name: 'Saint-Valentin', category: 'seasonal', hasBackground: false, previewIcon: '❤️' },
+  easter: { name: 'Pâques', category: 'seasonal', hasBackground: false, previewIcon: '🐰' },
+  space: { name: 'Espace', category: 'environment', hasBackground: true, previewIcon: '🪐' },
+  ocean: { name: 'Océan', category: 'environment', hasBackground: true, previewIcon: '🐠' },
+  neon: { name: 'Néon', category: 'artistic', hasBackground: true, previewIcon: '✨' },
+  forest: { name: 'Forêt', category: 'environment', hasBackground: true, previewIcon: '🌳' },
+  cyberpunk: { name: 'Cyberpunk', category: 'artistic', hasBackground: true, previewIcon: '🤖' },
+  retro: { name: 'Rétro', category: 'artistic', hasBackground: true, previewIcon: '🕹️' },
+  galaxy: { name: 'Galaxie', category: 'environment', hasBackground: true, previewIcon: '🌌' },
+  desert: { name: 'Désert', category: 'environment', hasBackground: true, previewIcon: '🌵' }
 };
 
 /**
@@ -42,6 +42,25 @@ function getThemeRegistry() {
 }
 
 /**
+ * New function to get all themes in a format the ThemeManager can use
+ * @returns {Array<Object>}
+ */
+function getKioskThemes() {
+    return Object.entries(THEME_REGISTRY).map(([id, data]) => ({
+        id: id,
+        meta: {
+            name: data.name,
+            category: data.category,
+            previewIcon: data.previewIcon || '🎨'
+        },
+        // We can add placeholders for code if we want to make them editable later
+        html: '',
+        css: '',
+        js: ''
+    }));
+}
+
+/**
  * Check if a theme has a background
  * @param {string} themeId - Theme identifier
  * @returns {boolean} True if theme has background elements
@@ -65,6 +84,12 @@ function applyTheme(newTheme, previousTheme, themeContainer) {
     }
 
     themeContainer.innerHTML = '';
+
+    // Check if it's a custom theme
+    if (newTheme.startsWith('custom_') || !THEME_REGISTRY[newTheme]) {
+        applyCustomTheme(newTheme, themeContainer);
+        return;
+    }
 
     if (newTheme === 'christmas') {
         themeContainer.innerHTML = `
@@ -938,6 +963,27 @@ function applyTheme(newTheme, previousTheme, themeContainer) {
     }
 }
 
+/**
+ * Apply custom theme from user themes
+ * @param {string} themeId - Theme identifier 
+ * @param {HTMLElement} themeContainer - Container to apply theme to
+ */
+async function applyCustomTheme(themeId, themeContainer) {
+    try {
+        // Try to fetch the custom theme
+        const response = await fetch(`/userthemes/${themeId}.html`);
+        if (response.ok) {
+            const html = await response.text();
+            themeContainer.innerHTML = html;
+        } else {
+            // Fallback if theme file doesn't exist
+            console.warn(`Custom theme ${themeId} not found`);
+        }
+    } catch (error) {
+        console.error(`Error loading custom theme ${themeId}:`, error);
+    }
+}
+
 // Make theme functions globally available
 window.getAvailableThemes = getAvailableThemes;
 window.getThemeName = getThemeName;
@@ -945,3 +991,6 @@ window.getThemeRegistry = getThemeRegistry;
 window.isValidTheme = isValidTheme;
 window.themeHasBackground = themeHasBackground;
 window.applyTheme = applyTheme;
+
+// Expose the new theme structure for the admin panel
+window.kioskThemes = getKioskThemes();

@@ -11,6 +11,8 @@ const constants = require('./src/constants');
 const kioskRoutes = require('./src/routes/kioskRoutes');
 const settingsRoutes = require('./src/routes/settingsRoutes');
 const importExportRoutes = require('./src/routes/importExportRoutes');
+const emojiRoutes = require('./src/routes/emojiRoutes');
+const customThemeRoutes = require('./src/routes/customThemeRoutes');
 
 const app = express();
 const PORT = process.env.PORT || constants.DEFAULT_PORT;
@@ -38,11 +40,14 @@ app.use(express.static('public'));
 // Static file serving
 app.use('/upload', express.static(constants.UPLOAD_DIR));
 app.use('/watermarks', express.static(constants.WATERMARK_DIR));
+app.use('/userthemes', express.static('public/userthemes'));
 
 // API Routes
 app.use('/kiosk', kioskRoutes);
 app.use('/', settingsRoutes);
 app.use('/', importExportRoutes);
+app.use('/api/emojis', emojiRoutes);
+app.use('/api/custom-themes', customThemeRoutes);
 
 // Page routes
 app.get('/admin', (req, res) => {

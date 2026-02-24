@@ -8,6 +8,10 @@
     --button-bg: #4CAF50;
     --button-text: #fff;
     --button-hover: #45a049;
+    --danger-bg: #f44336;
+    --danger-hover: #d32f2f;
+    --info-bg: #2196F3;
+    --info-hover: #1976D2;
 }
 
 .dark-theme {
@@ -18,8 +22,12 @@
     --accent-color: #ffc0f1;
     --modal-bg: rgba(0, 0, 0, 0.7);
     --button-bg: #ffc0f1;
-    --button-text: #fff;
+    --button-text: #333;
     --button-hover: #ff86d7;
+    --danger-bg: #ff7b7b;
+    --danger-hover: #ff5252;
+    --info-bg: #6bbdff;
+    --info-hover: #4aa9ff;
 }
 
 body {
@@ -265,12 +273,12 @@ textarea {
 }
 
 #cancel {
-    background-color: #f44336;
+    background-color: var(--danger-bg);
     color: var(--button-text);
 }
 
 #cancel:hover {
-    background-color: #d32f2f;
+    background-color: var(--danger-hover);
 }
 
 .visibility-btn {

@@ -3,6 +3,8 @@
  */
 
 const FileService = require('../services/FileService');
+const fs = require('fs');
+const path = require('path');
 const ValidationService = require('../services/ValidationService');
 const constants = require('../constants');
 
@@ -108,10 +110,6 @@ class SettingsController {
    */
   static validateGlobalSettings(settings) {
     try {
-      // Validate theme
-      if (settings.theme && !constants.SUPPORTED_THEMES.includes(settings.theme)) {
-        return { isValid: false, error: 'Invalid theme selected' };
-      }
 
       // Validate font sizes
       if (settings.titleFontSize && 
