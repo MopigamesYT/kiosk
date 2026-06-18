@@ -12,14 +12,25 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "express": "^4.19.2",
+    "express": "^5.2.1",
     "multer": "2.2.0",
     "node-emoji": "^2.2.0",
-    "uuid": "^10.0.0",
-    "write-file-atomic": "^6.0.0"
+    "uuid": "^14.0.0",
+    "write-file-atomic": "^8.0.0"
   },
   "devDependencies": {
-    "browser-sync": "^3.0.2",
-    "nodemon": "^3.1.4"
+    "browser-sync": "^3.0.4",
+    "nodemon": "^3.1.14"
+  },
+  "overrides": {
+    "minimatch": "^3.1.3",
+    "brace-expansion": "^1.1.12",
+    "picomatch": "^2.3.2",
+    "ws": "^8.20.1",
+    "immutable": "^3.8.3",
+    "follow-redirects": "^1.15.12",
+    "socket.io-parser": "^4.2.6",
+    "eazy-logger": "^4.1.0",
+    "lodash": "^4.17.23"
   }
 }

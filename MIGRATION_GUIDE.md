@@ -59,7 +59,7 @@ This document outlines the complete refactoring of the Kiosk application from mo
 
 ### 1. Install Dependencies
 ```bash
-pnpm add write-file-atomic
+bun add write-file-atomic
 ```
 
 ### 2. Start New Server
